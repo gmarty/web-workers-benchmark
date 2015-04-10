@@ -1,0 +1,14 @@
+{
+  "name": "node-isnumber",
+  "homepage": "https://github.com/brycebaril/node-isnumber",
+  "_release": "cc2952a0fb",
+  "_resolution": {
+    "type": "branch",
+    "branch": "master",
+    "commit": "cc2952a0fbde19619fb4c88f0ab896f02e311adc"
+  },
+  "_source": "git@github.com:brycebaril/node-isnumber.git",
+  "_target": "*",
+  "_originalSource": "git@github.com:brycebaril/node-isnumber.git",
+  "_direct": true
+}

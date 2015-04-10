@@ -1,0 +1,31 @@
+{
+  "name": "isnumber",
+  "version": "1.0.0",
+  "description": "A simple test to see if a value is a non-infinite number.",
+  "main": "index.js",
+  "directories": {
+    "test": "test"
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "tape": "~2.4.0"
+  },
+  "scripts": {
+    "test": "node test/"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git@github.com:brycebaril/node-isnumber.git"
+  },
+  "keywords": [
+    "number",
+    "test",
+    "isNumber",
+    "finite"
+  ],
+  "author": "Bryce B. Baril",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/brycebaril/node-isnumber/issues"
+  }
+}

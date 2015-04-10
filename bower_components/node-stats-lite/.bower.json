@@ -1,0 +1,15 @@
+{
+  "name": "node-stats-lite",
+  "homepage": "https://github.com/brycebaril/node-stats-lite",
+  "version": "1.0.3",
+  "_release": "1.0.3",
+  "_resolution": {
+    "type": "version",
+    "tag": "v1.0.3",
+    "commit": "7a2030a99391d0ec53e18f4dae13b12658e80123"
+  },
+  "_source": "git@github.com:brycebaril/node-stats-lite.git",
+  "_target": "~1.0.3",
+  "_originalSource": "git@github.com:brycebaril/node-stats-lite.git",
+  "_direct": true
+}
