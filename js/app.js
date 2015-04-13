@@ -44,12 +44,18 @@ require(['bower_components/threads/threads'], function(threads) {
 
   function measureLatencyOfThreads(values) {
     var now = Date.now();
+    var highResolutionBefore = performance.now();
 
     client
       .call('ping', now)
       .then(function(timestamps) {
         var now = Date.now();
-        var value = [timestamps[0], now - timestamps[1]];
+        var highResolutionAfter = performance.now();
+        var value = [
+          timestamps[0],
+          now - timestamps[1],
+          highResolutionAfter - highResolutionBefore
+        ];
 
         if (!firstRun) {
           // We don't keep the first measure that's too erratic.
@@ -68,12 +74,18 @@ require(['bower_components/threads/threads'], function(threads) {
 
   function measureLatencyOfWebWorkersWithPostMessage(values) {
     var now = Date.now();
+    var highResolutionBefore = performance.now();
 
     rawWorker.postMessage(now);
     rawWorker.onmessage = function(evt) {
       var timestamps = evt.data;
       var now = Date.now();
-      var value = [timestamps[0], now - timestamps[1]];
+      var highResolutionAfter = performance.now();
+      var value = [
+        timestamps[0],
+        now - timestamps[1],
+        highResolutionAfter - highResolutionBefore
+      ];
 
       values.push(value);
 
@@ -92,12 +104,18 @@ require(['bower_components/threads/threads'], function(threads) {
     }
 
     var now = Date.now();
+    var highResolutionBefore = performance.now();
 
     channel.postMessage(now);
     channel.onmessage = function(evt) {
       var timestamps = evt.data;
       var now = Date.now();
-      var value = [timestamps[0], now - timestamps[1]];
+      var highResolutionAfter = performance.now();
+      var value = [
+        timestamps[0],
+        now - timestamps[1],
+        highResolutionAfter - highResolutionBefore
+      ];
 
       values.push(value);
 
@@ -110,21 +128,28 @@ require(['bower_components/threads/threads'], function(threads) {
   }
 
   function processData(title, values) {
-    var uploadVal = values.map(function(measure) {
-      return measure[0];
+    var uploadVal = values.map(function(value) {
+      return value[0];
     });
-    var downloadVal = values.map(function(measure) {
-      return measure[1];
+    var downloadVal = values.map(function(value) {
+      return value[1];
+    });
+    var roundtripVal = values.map(function(value) {
+      return value[2];
     });
 
-    var uploadMean = mean(uploadVal);
-    var downloadMean = mean(downloadVal);
-    var uploadMedian = median(uploadVal);
-    var downloadMedian = median(downloadVal);
+    var uploadMean = mean(uploadVal).toFixed(3);
+    var downloadMean = mean(downloadVal).toFixed(3);
+    var roundtripMean = mean(roundtripVal).toFixed(3);
+    var uploadMedian = median(uploadVal).toFixed(3);
+    var downloadMedian = median(downloadVal).toFixed(3);
+    var roundtripMedian = median(roundtripVal).toFixed(3);
     var uploadStdev = stdev(uploadVal).toFixed(3);
     var downloadStdev = stdev(downloadVal).toFixed(3);
-    var uploadPercentile = percentile(uploadVal, .85);
-    var downloadPercentile = percentile(downloadVal, .85);
+    var roundtripStdev = stdev(roundtripVal).toFixed(3);
+    var uploadPercentile = percentile(uploadVal, .85).toFixed(3);
+    var downloadPercentile = percentile(downloadVal, .85).toFixed(3);
+    var roundtripPercentile = percentile(roundtripVal, .85).toFixed(3);
 
     var tpl = `
       <header>
@@ -151,6 +176,13 @@ require(['bower_components/threads/threads'], function(threads) {
           <td>${downloadMedian}ms</td>
           <td>${downloadStdev}</td>
           <td>${downloadPercentile}</td>
+        </tr>
+        <tr>
+          <th>RT</th>
+          <td>${roundtripMean}ms</td>
+          <td>${roundtripMedian}ms</td>
+          <td>${roundtripStdev}</td>
+          <td>${roundtripPercentile}</td>
         </tr>
       </table>`;
 
