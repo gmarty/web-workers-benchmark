@@ -114,10 +114,12 @@ require(['bower_components/threads/threads'], function(threads) {
     var downloadPercentile = percentile(downloadVal, .85);
 
     var tpl = `
-      <h2>${title}</h2>
+      <header>
+        <h2>${title}</h2>
+      </header>
       <table>
         <tr>
-          <td></td>
+          <th></th>
           <th>Mean</th>
           <th>Median</th>
           <th>Std dev</th>

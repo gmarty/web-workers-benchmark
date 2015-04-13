@@ -1,3 +1,9 @@
+:root {
+  --header-background: steelblue;
+  --header-title-color: white;
+  --header-icon-color: white;
+}
+
 html {
   font: normal 10px/10px Arial;
 }
@@ -5,7 +11,7 @@ html {
 body {
   margin: 0;
   padding: 0;
-  font: normal 1.2rem/2.4rem Arial;
+  font: normal 1.2rem/2.4rem FiraSans;
 }
 
 body > section {
@@ -20,10 +26,17 @@ h1, h2 {
   color: steelblue;
   margin: 0;
   padding: 0;
+  font-weight: 300;
+  font-style: italic;
 }
 
 h2 {
-  margin-top: 2rem;
+  margin-top: 1rem;
+  margin-bottom: 1rem;
+}
+
+table {
+  width: 100%;
 }
 
 table td {
@@ -31,8 +44,8 @@ table td {
 }
 
 table th {
-  color: steelblue;
-  background: lightgrey;
+  color: white;
+  background: steelblue;
   font-weight: normal;
   padding: .5rem;
 }
