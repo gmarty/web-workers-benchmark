@@ -13,9 +13,20 @@ require(['bower_components/threads/threads'], function(threads) {
   var client = threads.client('latency-service');
   var rawWorker = new Worker('js/workers/latency.js');
   var channel = 'BroadcastChannel' in window ? new BroadcastChannel('latency') : {};
-  var main = document.getElementById('main');
+
+  var reload = document.getElementById('reload');
+  var results = document.getElementById('results');
 
   var firstRun = true;
+
+  function startMeasuring() {
+    results.innerHTML = '';
+
+    firstRun = true;
+    measureLatencyOfThreads([]);
+    measureLatencyOfWebWorkersWithPostMessage([]);
+    measureLatencyOfWebWorkersWithBroadcastChannel([]);
+  }
 
   rawWorker.postMessage(0);
   rawWorker.onmessage = function start() {
@@ -23,11 +34,13 @@ require(['bower_components/threads/threads'], function(threads) {
     rawWorker.onmessage = null;
 
     setTimeout(function() {
-      measureLatencyOfThreads([]);
-      measureLatencyOfWebWorkersWithPostMessage([]);
-      measureLatencyOfWebWorkersWithBroadcastChannel([]);
+      startMeasuring();
     }, 500);
   };
+
+  reload.addEventListener('click', function() {
+    startMeasuring();
+  });
 
   function measureLatencyOfThreads(values) {
     var now = Date.now();
@@ -143,6 +156,6 @@ require(['bower_components/threads/threads'], function(threads) {
 
     var container = document.createElement('div');
     container.innerHTML = tpl;
-    main.appendChild(container);
+    results.appendChild(container);
   }
 });
