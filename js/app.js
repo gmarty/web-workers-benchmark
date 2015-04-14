@@ -1,6 +1,9 @@
 'use strict';
 
-require(['bower_components/threads/threads'], function(threads) {
+require([
+  'bower_components/threads/threads',
+  'bower_components/d3/d3.min'
+], (threads, d3) => {
   threads.manager({
     'latency-service': {
       src: 'js/services/latency.js',
@@ -17,7 +20,8 @@ require(['bower_components/threads/threads'], function(threads) {
 
     elements: {
       reload: document.getElementById('reload'),
-      results: document.getElementById('results')
+      table: document.getElementById('table'),
+      chart: document.getElementById('chart')
     },
 
     firstRun: true,
@@ -36,11 +40,11 @@ require(['bower_components/threads/threads'], function(threads) {
       this.elements.reload.addEventListener('click', () => {
         this.startMeasuring();
       });
-
     },
 
     startMeasuring: function() {
-      this.elements.results.innerHTML = '';
+      this.elements.table.innerHTML = '';
+      this.elements.chart.innerHTML = '';
 
       this.firstRun = true;
       this.measureLatencyOfThreads([]);
@@ -138,21 +142,21 @@ require(['bower_components/threads/threads'], function(threads) {
       var downloadVal = values.map(value => value[1]);
       var roundtripVal = values.map(value => value[2]);
 
-      var uploadMean = mean(uploadVal).toFixed(3);
-      var downloadMean = mean(downloadVal).toFixed(3);
-      var roundtripMean = mean(roundtripVal).toFixed(3);
-      var uploadMedian = median(uploadVal).toFixed(3);
-      var downloadMedian = median(downloadVal).toFixed(3);
-      var roundtripMedian = median(roundtripVal).toFixed(3);
-      var uploadStdev = stdev(uploadVal).toFixed(3);
-      var downloadStdev = stdev(downloadVal).toFixed(3);
-      var roundtripStdev = stdev(roundtripVal).toFixed(3);
-      var upload90Percentile = percentile(uploadVal, .90).toFixed(3);
-      var download90Percentile = percentile(downloadVal, .90).toFixed(3);
-      var roundtrip90Percentile = percentile(roundtripVal, .90).toFixed(3);
-      var upload95Percentile = percentile(uploadVal, .95).toFixed(3);
-      var download95Percentile = percentile(downloadVal, .95).toFixed(3);
-      var roundtrip95Percentile = percentile(roundtripVal, .95).toFixed(3);
+      var uploadMean = mean(uploadVal);
+      var downloadMean = mean(downloadVal);
+      var roundtripMean = mean(roundtripVal);
+      var uploadMedian = median(uploadVal);
+      var downloadMedian = median(downloadVal);
+      var roundtripMedian = median(roundtripVal);
+      var uploadStdev = stdev(uploadVal);
+      var downloadStdev = stdev(downloadVal);
+      var roundtripStdev = stdev(roundtripVal);
+      var upload90Percentile = percentile(uploadVal, .90);
+      var download90Percentile = percentile(downloadVal, .90);
+      var roundtrip90Percentile = percentile(roundtripVal, .90);
+      var upload95Percentile = percentile(uploadVal, .95);
+      var download95Percentile = percentile(downloadVal, .95);
+      var roundtrip95Percentile = percentile(roundtripVal, .95);
 
       var tpl = `
         <header>
@@ -169,34 +173,102 @@ require(['bower_components/threads/threads'], function(threads) {
           </tr>
           <tr>
             <th>U</th>
-            <td>${uploadMean}ms</td>
-            <td>${uploadMedian}ms</td>
-            <td>${uploadStdev}</td>
-            <td>${upload90Percentile}</td>
-            <td>${upload95Percentile}</td>
+            <td>${(uploadMean).toFixed(3)}</td>
+            <td>${(uploadMedian).toFixed(3)}</td>
+            <td>${(uploadStdev).toFixed(3)}</td>
+            <td>${(upload90Percentile).toFixed(3)}</td>
+            <td>${(upload95Percentile).toFixed(3)}</td>
           </tr>
           <tr>
             <th>D</th>
-            <td>${downloadMean}ms</td>
-            <td>${downloadMedian}ms</td>
-            <td>${downloadStdev}</td>
-            <td>${download90Percentile}</td>
-            <td>${download95Percentile}</td>
+            <td>${(downloadMean).toFixed(3)}</td>
+            <td>${(downloadMedian).toFixed(3)}</td>
+            <td>${(downloadStdev).toFixed(3)}</td>
+            <td>${(download90Percentile).toFixed(3)}</td>
+            <td>${(download95Percentile).toFixed(3)}</td>
           </tr>
           <tr>
             <th>RT</th>
-            <td>${roundtripMean}ms</td>
-            <td>${roundtripMedian}ms</td>
-            <td>${roundtripStdev}</td>
-            <td>${roundtrip90Percentile}</td>
-            <td>${roundtrip95Percentile}</td>
+            <td>${(roundtripMean).toFixed(3)}</td>
+            <td>${(roundtripMedian).toFixed(3)}</td>
+            <td>${(roundtripStdev).toFixed(3)}</td>
+            <td>${(roundtrip90Percentile).toFixed(3)}</td>
+            <td>${(roundtrip95Percentile).toFixed(3)}</td>
           </tr>
         </table>
       `;
 
       var container = document.createElement('div');
       container.innerHTML = tpl;
-      this.elements.results.appendChild(container);
+      this.elements.table.appendChild(container);
+
+      this.plotBarChart([
+        {name: 'Mean', value: roundtripMean},
+        {name: 'Median', value: roundtripMedian},
+        {name: '90th %ile', value: roundtrip90Percentile},
+        {name: '95th %ile', value: roundtrip95Percentile}
+      ]);
+    },
+
+    // Graph related methods.
+    plotBarChart: function(data) {
+      var margin = {top: 5, right: 5, bottom: 20, left: 35};
+      var width = 320 - margin.left - margin.right;
+      var height = 240 - margin.top - margin.bottom;
+
+      var x = d3.scale.ordinal()
+        .rangeRoundBands([0, width], .1);
+
+      var y = d3.scale.linear()
+        .domain([0, d3.max(data)])
+        .range([height, 0]);
+
+      var xAxis = d3.svg.axis()
+        .scale(x)
+        .orient('bottom');
+
+      var yAxis = d3.svg.axis()
+        .scale(y)
+        .orient('left')
+        .ticks(10);
+
+      var color = d3.scale.category10();
+
+      var chart = d3.select('#chart').append('svg')
+        .attr('width', width + margin.left + margin.right)
+        .attr('height', height + margin.top + margin.bottom).append('g')
+        .attr('transform', 'translate(' + margin.left + ',' + margin.top + ')');
+
+      x.domain(data.map(d => d.name));
+
+      y.domain([0, d3.max(data, d => d.value)]);
+
+      chart.append('g')
+        .attr('class', 'x axis')
+        .attr('transform', 'translate(0,' + height + ')')
+        .call(xAxis);
+
+      chart.append('g')
+        .attr('class', 'y axis')
+        .call(yAxis)
+        .append('text')
+        .attr('transform', 'rotate(-90)')
+        .attr('y', 6)
+        .attr('dy', '.71em')
+        .style('text-anchor', 'end')
+        .text('Latency in ms');
+
+      color.domain(data);
+
+      chart.selectAll('.bar')
+        .data(data)
+        .enter().append('rect')
+        .attr('class', 'bar')
+        .attr('x', d => x(d.name))
+        .attr('y', d => y(d.value))
+        .attr('height', d => height - y(d.value))
+        .attr('width', x.rangeBand())
+        .style('fill', d => color(d.name));
     }
   };
 
