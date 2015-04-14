@@ -147,9 +147,12 @@ require(['bower_components/threads/threads'], function(threads) {
       var uploadStdev = stdev(uploadVal).toFixed(3);
       var downloadStdev = stdev(downloadVal).toFixed(3);
       var roundtripStdev = stdev(roundtripVal).toFixed(3);
-      var uploadPercentile = percentile(uploadVal, .85).toFixed(3);
-      var downloadPercentile = percentile(downloadVal, .85).toFixed(3);
-      var roundtripPercentile = percentile(roundtripVal, .85).toFixed(3);
+      var upload90Percentile = percentile(uploadVal, .90).toFixed(3);
+      var download90Percentile = percentile(downloadVal, .90).toFixed(3);
+      var roundtrip90Percentile = percentile(roundtripVal, .90).toFixed(3);
+      var upload95Percentile = percentile(uploadVal, .95).toFixed(3);
+      var download95Percentile = percentile(downloadVal, .95).toFixed(3);
+      var roundtrip95Percentile = percentile(roundtripVal, .95).toFixed(3);
 
       var tpl = `
         <header>
@@ -161,28 +164,32 @@ require(['bower_components/threads/threads'], function(threads) {
             <th>Mean</th>
             <th>Median</th>
             <th>Std dev</th>
-            <th>85th percentile</th>
+            <th>90th %ile</th>
+            <th>95th %ile</th>
           </tr>
           <tr>
             <th>U</th>
             <td>${uploadMean}ms</td>
             <td>${uploadMedian}ms</td>
             <td>${uploadStdev}</td>
-            <td>${uploadPercentile}</td>
+            <td>${upload90Percentile}</td>
+            <td>${upload95Percentile}</td>
           </tr>
           <tr>
             <th>D</th>
             <td>${downloadMean}ms</td>
             <td>${downloadMedian}ms</td>
             <td>${downloadStdev}</td>
-            <td>${downloadPercentile}</td>
+            <td>${download90Percentile}</td>
+            <td>${download95Percentile}</td>
           </tr>
           <tr>
             <th>RT</th>
             <td>${roundtripMean}ms</td>
             <td>${roundtripMedian}ms</td>
             <td>${roundtripStdev}</td>
-            <td>${roundtripPercentile}</td>
+            <td>${roundtrip90Percentile}</td>
+            <td>${roundtrip95Percentile}</td>
           </tr>
         </table>
       `;
