@@ -37,6 +37,8 @@ require([
         }, 500);
       };
 
+      this.initPlot();
+
       this.elements.reload.addEventListener('click', () => {
         this.startMeasuring();
       });
@@ -211,17 +213,20 @@ require([
     },
 
     // Graph related methods.
-    plotBarChart: function(data) {
-      var margin = {top: 5, right: 5, bottom: 20, left: 35};
-      var width = 320 - margin.left - margin.right;
-      var height = 240 - margin.top - margin.bottom;
+    initPlot: function() {
+      this.graph = {};
+      this.graph.margin = {top: 5, right: 5, bottom: 20, left: 35};
+      this.graph.width = 320 - this.graph.margin.left - this.graph.margin.right;
+      this.graph.height = 240 - this.graph.margin.top - this.graph.margin.bottom;
+    },
 
+    plotBarChart: function(data) {
       var x = d3.scale.ordinal()
-        .rangeRoundBands([0, width], .1);
+        .rangeRoundBands([0, this.graph.width], .1);
 
       var y = d3.scale.linear()
         .domain([0, d3.max(data)])
-        .range([height, 0]);
+        .range([this.graph.height, 0]);
 
       var xAxis = d3.svg.axis()
         .scale(x)
@@ -235,9 +240,9 @@ require([
       var color = d3.scale.category10();
 
       var chart = d3.select('#chart').append('svg')
-        .attr('width', width + margin.left + margin.right)
-        .attr('height', height + margin.top + margin.bottom).append('g')
-        .attr('transform', 'translate(' + margin.left + ',' + margin.top + ')');
+        .attr('width', this.graph.width + this.graph.margin.left + this.graph.margin.right)
+        .attr('height', this.graph.height + this.graph.margin.top + this.graph.margin.bottom).append('g')
+        .attr('transform', 'translate(' + this.graph.margin.left + ',' + this.graph.margin.top + ')');
 
       x.domain(data.map(d => d.name));
 
@@ -245,7 +250,7 @@ require([
 
       chart.append('g')
         .attr('class', 'x axis')
-        .attr('transform', 'translate(0,' + height + ')')
+        .attr('transform', 'translate(0,' + this.graph.height + ')')
         .call(xAxis);
 
       chart.append('g')
@@ -266,7 +271,7 @@ require([
         .attr('class', 'bar')
         .attr('x', d => x(d.name))
         .attr('y', d => y(d.value))
-        .attr('height', d => height - y(d.value))
+        .attr('height', d => this.graph.height - y(d.value))
         .attr('width', x.rangeBand())
         .style('fill', d => color(d.name));
     }
