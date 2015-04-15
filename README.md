@@ -12,4 +12,5 @@ different methods:
 * the [threads](https://github.com/gaia-components/threads) library
 
 For each method, the upload (main thread -> worker) and download (worker -> main
-thread) latencies are measured.
+thread) latencies are measured. The roundtrip is also measured using
+high-resolution timers.
