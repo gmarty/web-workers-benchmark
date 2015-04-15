@@ -55,3 +55,8 @@ table td {
   border-right: .1rem solid lightgrey;
   padding: 1rem;
 }
+
+/* Graph */
+.x.axis g text {
+  font-size: 8px;
+}

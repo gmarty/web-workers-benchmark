@@ -37,8 +37,6 @@ require([
         }, 500);
       };
 
-      this.initPlot();
-
       this.elements.reload.addEventListener('click', () => {
         this.startMeasuring();
       });
@@ -46,7 +44,7 @@ require([
 
     startMeasuring: function() {
       this.elements.table.innerHTML = '';
-      this.elements.chart.innerHTML = '';
+      this.initPlot();
 
       this.firstRun = true;
       this.measureLatencyOfThreads([]);
@@ -77,7 +75,8 @@ require([
           if (values.length < ITERATIONS) {
             this.measureLatencyOfThreads(values);
           } else {
-            this.processData('threads library', values);
+            this.processData('threads library', values,
+              'threads');
           }
 
           this.firstRun = false;
@@ -104,7 +103,8 @@ require([
         if (values.length < ITERATIONS) {
           this.measureLatencyOfWebWorkersWithPostMessage(values);
         } else {
-          this.processData('Web Workers with postMessage', values);
+          this.processData('Web Workers with postMessage', values,
+            'postMessage');
         }
       };
     },
@@ -134,12 +134,13 @@ require([
         if (values.length < ITERATIONS) {
           this.measureLatencyOfWebWorkersWithBroadcastChannel(values);
         } else {
-          this.processData('Web Workers with Broadcast Channel', values);
+          this.processData('Web Workers with Broadcast Channel', values,
+            'BC channel');
         }
       };
     },
 
-    processData: function(title, values) {
+    processData: function(title, values, shortTitle) {
       var uploadVal = values.map(value => value[0]);
       var downloadVal = values.map(value => value[1]);
       var roundtripVal = values.map(value => value[2]);
@@ -205,57 +206,53 @@ require([
       this.elements.table.appendChild(container);
 
       this.plotBarChart([
-        {name: 'Mean', value: roundtripMean},
-        {name: 'Median', value: roundtripMedian},
-        {name: '90th %ile', value: roundtrip90Percentile},
-        {name: '95th %ile', value: roundtrip95Percentile}
-      ]);
+        {name: 'x', value: roundtripMean},
+        {name: 'M', value: roundtripMedian},
+        {name: '90%', value: roundtrip90Percentile},
+        {name: '95%', value: roundtrip95Percentile}
+      ], shortTitle);
     },
 
     // Graph related methods.
     initPlot: function() {
+      this.elements.chart.innerHTML = '';
+
       this.graph = {};
-      this.graph.margin = {top: 5, right: 5, bottom: 20, left: 35};
+      this.graph.margin = {top: 5, right: 45, bottom: 30, left: 30};
       this.graph.width = 320 - this.graph.margin.left - this.graph.margin.right;
       this.graph.height = 240 - this.graph.margin.top - this.graph.margin.bottom;
-    },
 
-    plotBarChart: function(data) {
-      var x = d3.scale.ordinal()
+      this.graph.x = d3.scale.ordinal()
         .rangeRoundBands([0, this.graph.width], .1);
 
-      var y = d3.scale.linear()
-        .domain([0, d3.max(data)])
+      this.graph.y = d3.scale.linear()
+        .domain([0, this.graph.maxY])
         .range([this.graph.height, 0]);
 
-      var xAxis = d3.svg.axis()
-        .scale(x)
+      this.graph.xAxis = d3.svg.axis()
+        .scale(this.graph.x)
         .orient('bottom');
 
-      var yAxis = d3.svg.axis()
-        .scale(y)
+      this.graph.yAxis = d3.svg.axis()
+        .scale(this.graph.y)
         .orient('left')
         .ticks(10);
 
-      var color = d3.scale.category10();
+      this.graph.color = d3.scale.category10();
 
-      var chart = d3.select('#chart').append('svg')
+      this.graph.chart = d3.select('#chart').append('svg')
         .attr('width', this.graph.width + this.graph.margin.left + this.graph.margin.right)
         .attr('height', this.graph.height + this.graph.margin.top + this.graph.margin.bottom).append('g')
-        .attr('transform', 'translate(' + this.graph.margin.left + ',' + this.graph.margin.top + ')');
+        .attr('transform', `translate(${this.graph.margin.left},${this.graph.margin.top})`);
 
-      x.domain(data.map(d => d.name));
-
-      y.domain([0, d3.max(data, d => d.value)]);
-
-      chart.append('g')
+      this.graph.chart.xAxisEl = this.graph.chart.append('g')
         .attr('class', 'x axis')
-        .attr('transform', 'translate(0,' + this.graph.height + ')')
-        .call(xAxis);
+        .attr('transform', `translate(0,${this.graph.height})`);
 
-      chart.append('g')
-        .attr('class', 'y axis')
-        .call(yAxis)
+      this.graph.chart.yAxisEl = this.graph.chart.append('g')
+        .attr('class', 'y axis');
+
+      this.graph.chart.yAxisEl
         .append('text')
         .attr('transform', 'rotate(-90)')
         .attr('y', 6)
@@ -263,17 +260,73 @@ require([
         .style('text-anchor', 'end')
         .text('Latency in ms');
 
-      color.domain(data);
+      this.graph.maxY = 0;
+      this.graph.set = 0;
+      this.graph.data = [];
+    },
 
-      chart.selectAll('.bar')
-        .data(data)
-        .enter().append('rect')
-        .attr('class', 'bar')
-        .attr('x', d => x(d.name))
-        .attr('y', d => y(d.value))
-        .attr('height', d => this.graph.height - y(d.value))
-        .attr('width', x.rangeBand())
-        .style('fill', d => color(d.name));
+    plotBarChart: function(data, title) {
+      if (this.graph.set === 1) {
+        this.graph.x.domain(data.map(d => d.name));
+
+        // Captions for the different statistic functions plotted.
+        var caption = this.graph.chart.append('g')
+          .attr('class', 'caption')
+          .attr('transform', `translate(${this.graph.margin.right},0)`);
+
+        var legend = caption.selectAll('.legend')
+          .data(data)
+          .enter().append('g')
+          .attr('class', 'legend')
+          .attr('transform', (d, i) => `translate(0,${(i * 20)})`);
+
+        legend.append('rect')
+          .attr('x', this.graph.width - 18)
+          .attr('width', 18)
+          .attr('height', 18)
+          .style('fill', d => this.graph.color(d.name));
+
+        legend.append('text')
+          .attr('x', this.graph.width - 24)
+          .attr('y', 9)
+          .attr('dy', '.35em')
+          .style('text-anchor', 'end')
+          .text(d => d.name);
+      }
+
+      data.forEach(item => item.name += ` ${this.graph.set} `);
+
+      this.graph.data = this.graph.data.concat(data);
+
+      // Caption for each measured set.
+      this.graph.chart.xAxisEl
+        .append('text')
+        .attr('transform', `translate(${(this.graph.set * (this.graph.width) / 3)},12)`)
+        .attr('y', 6)
+        .attr('dy', '.71em')
+        .text(` ${title} `);
+
+      this.graph.set++;
+
+      if (this.graph.set >= 3) {
+        this.graph.maxY = d3.max(this.graph.data, d => d.value);
+
+        this.graph.x.domain(this.graph.data.map(d => d.name));
+        this.graph.y.domain([0, this.graph.maxY]);
+
+        this.graph.chart.xAxisEl.call(this.graph.xAxis);
+        this.graph.chart.yAxisEl.call(this.graph.yAxis);
+
+        this.graph.chart.selectAll('.bar')
+          .data(this.graph.data)
+          .enter().append('rect')
+          .attr('class', 'bar')
+          .attr('x', d => this.graph.x(d.name))
+          .attr('y', d => this.graph.y(d.value))
+          .attr('height', d => this.graph.height - this.graph.y(d.value))
+          .attr('width', this.graph.x.rangeBand())
+          .style('fill', d => this.graph.color(d.name.split(' ')[0]));
+      }
     }
   };
 
