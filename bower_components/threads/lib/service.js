@@ -92,7 +92,7 @@ function ServiceInternal(external, name, methods, contract) {
   // event before the thread-parent has
   // 'connected', it won't be heard.
   setTimeout(function() { this.ready(); }.bind(this));
-  debug('initialized');
+  debug('initialized', this.name);
 }
 
 /**
@@ -171,13 +171,13 @@ ServiceInternal.prototype.ready = function() {
 };
 
 ServiceInternal.prototype.onconnect = function(data) {
-  debug('on connect', data);
   var client = data.client;
   var contract = data.contract;
   var service = data.service;
 
   if (!client) return;
   if (service !== this.name) return;
+  debug('on connect', this.id, data);
   if (this.channels[client]) return;
 
   var channel = new BroadcastChannel(client);

@@ -210,13 +210,13 @@ if(window["dojo"]){
 					row.insertCell(-1).innerHTML=doh._totalTime+"ms";
 				}
 
-				//This location can do the final performance rendering for the results
+				//This location can do the final performance rendering for the table
 				//of any performance tests.
 				var plotResults = null;
 				var standby;
 				if(doh.perfTestResults){
 					if(window.dojo){
-						//If we have dojo and here are perf tests results,
+						//If we have dojo and here are perf tests table,
 						//well, we'll use the dojo charting functions
 						dojo.require("dojox.charting.Chart2D");
 						dojo.require("dojox.charting.DataChart");

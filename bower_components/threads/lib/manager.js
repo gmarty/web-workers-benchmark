@@ -102,13 +102,13 @@ ManagerInternal.prototype.onclientconnected = function(msg) {
 };
 
 ManagerInternal.prototype.getThread = function(descriptor) {
-  debug('get process', descriptor, this.processes);
+  debug('get thread', descriptor, this.processes);
   var process = this.processes.src[descriptor.src];
   return process || this.createThread(descriptor);
 };
 
 ManagerInternal.prototype.createThread = function(descriptor) {
-  debug('create process', descriptor);
+  debug('create thread', descriptor);
   var process = new ChildThread(descriptor);
   this.processes.src[process.src] = process;
   this.processes.id[process.id] = process;

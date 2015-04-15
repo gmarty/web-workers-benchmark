@@ -286,6 +286,11 @@ Client.prototype.connectViaThread = function() {
  * the client could end up connecting
  * to the wrong service.
  *
+ * Right now this produces quite a lot of noise
+ * as every Service and every Manager will
+ * respond to to messages on the 'threadsmanager'
+ * channel.
+ *
  * @private
  */
 Client.prototype.connectViaManager = function() {
@@ -557,13 +562,13 @@ ManagerInternal.prototype.onclientconnected = function(msg) {
 };
 
 ManagerInternal.prototype.getThread = function(descriptor) {
-  debug('get process', descriptor, this.processes);
+  debug('get thread', descriptor, this.processes);
   var process = this.processes.src[descriptor.src];
   return process || this.createThread(descriptor);
 };
 
 ManagerInternal.prototype.createThread = function(descriptor) {
-  debug('create process', descriptor);
+  debug('create thread', descriptor);
   var process = new ChildThread(descriptor);
   this.processes.src[process.src] = process;
   this.processes.id[process.id] = process;
@@ -665,7 +670,7 @@ function ServiceInternal(external, name, methods, contract) {
   // event before the thread-parent has
   // 'connected', it won't be heard.
   setTimeout(function() { this.ready(); }.bind(this));
-  debug('initialized');
+  debug('initialized', this.name);
 }
 
 /**
@@ -744,13 +749,13 @@ ServiceInternal.prototype.ready = function() {
 };
 
 ServiceInternal.prototype.onconnect = function(data) {
-  debug('on connect', data);
   var client = data.client;
   var contract = data.contract;
   var service = data.service;
 
   if (!client) return;
   if (service !== this.name) return;
+  debug('on connect', this.id, data);
   if (this.channels[client]) return;
 
   var channel = new BroadcastChannel(client);

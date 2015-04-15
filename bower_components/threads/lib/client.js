@@ -119,6 +119,11 @@ Client.prototype.connectViaThread = function() {
  * the client could end up connecting
  * to the wrong service.
  *
+ * Right now this produces quite a lot of noise
+ * as every Service and every Manager will
+ * respond to to messages on the 'threadsmanager'
+ * channel.
+ *
  * @private
  */
 Client.prototype.connectViaManager = function() {

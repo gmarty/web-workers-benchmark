@@ -440,8 +440,8 @@ doh._getTestObj = function(group, test, type){
 	if(type === "perf" || tObj.testType === "perf"){
 		tObj.testType = "perf";
 
-		//Build an object on the root DOH class to contain all the test results.
-		//Cache it on the test object for quick lookup later for results storage.
+		//Build an object on the root DOH class to contain all the test table.
+		//Cache it on the test object for quick lookup later for table storage.
 		if(!doh.perfTestResults){
 			doh.perfTestResults = {};
 			doh.perfTestResults[group] = {};
@@ -452,7 +452,7 @@ doh._getTestObj = function(group, test, type){
 		if(!doh.perfTestResults[group][tObj.name]){
 			doh.perfTestResults[group][tObj.name] = {};
 		}
-		tObj.results = doh.perfTestResults[group][tObj.name];
+		tObj.table = doh.perfTestResults[group][tObj.name];
 
 		//If it's not set, then set the trial duration
 		//default to 100ms.
@@ -868,7 +868,7 @@ doh._runPerfFixture = function(/*String*/groupName, /*Object*/fixture){
 	//This is down as an async type test where there is a delay
 	//between each execution to allow for GC time, etc, so the GC
 	//has less impact on the tests.
-	var res = fixture.results;
+	var res = fixture.table;
 	res.trials = [];
 
 	//Try to figure out how many calls are needed to hit a particular threshold.
@@ -933,7 +933,7 @@ doh._runPerfFixture = function(/*String*/groupName, /*Object*/fixture){
 					}
 				};
 				tTimer.addCallback(function(end){
-					//Figure out the results and try to factor out function call costs.
+					//Figure out the table and try to factor out function call costs.
 					var tResults = {
 						trial: (fixture.trialIterations - countdown),
 						testIterations: iterations,
@@ -951,7 +951,7 @@ doh._runPerfFixture = function(/*String*/groupName, /*Object*/fixture){
 					if(countdown){
 						doh.setTimeout(trialRunner, fixture.trialDelay);
 					}else{
-						//Okay, we're done, lets compute some final performance results.
+						//Okay, we're done, lets compute some final performance table.
 						var t = res.trials;
 
 
