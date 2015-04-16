@@ -25,7 +25,6 @@ require([
       scatterplot: document.getElementById('scatterplot')
     },
 
-    firstRun: true,
     graph: {},
 
     init: function() {
@@ -49,7 +48,6 @@ require([
       this.initBarChart();
       this.initScatterPlot();
 
-      this.firstRun = true;
       this.measureLatencyOfThreads([]);
       this.measureLatencyOfWebWorkersWithPostMessage([]);
       this.measureLatencyOfWebWorkersWithBroadcastChannel([]);
@@ -70,19 +68,14 @@ require([
             highResolutionAfter - highResolutionBefore
           ];
 
-          if (!this.firstRun) {
-            // We don't keep the first measure that's too erratic.
-            values.push(value);
-          }
+          values.push(value);
 
-          if (values.length < ITERATIONS) {
+          if (values.length <= ITERATIONS) {
             this.measureLatencyOfThreads(values);
           } else {
             this.processData('threads library', values,
               'threads');
           }
-
-          this.firstRun = false;
         });
     },
 
@@ -103,7 +96,7 @@ require([
 
         values.push(value);
 
-        if (values.length < ITERATIONS) {
+        if (values.length <= ITERATIONS) {
           this.measureLatencyOfWebWorkersWithPostMessage(values);
         } else {
           this.processData('Web Workers with postMessage', values,
@@ -134,7 +127,7 @@ require([
 
         values.push(value);
 
-        if (values.length < ITERATIONS) {
+        if (values.length <= ITERATIONS) {
           this.measureLatencyOfWebWorkersWithBroadcastChannel(values);
         } else {
           this.processData('Web Workers with Broadcast Channel', values,
@@ -144,6 +137,8 @@ require([
     },
 
     processData: function(title, values, shortTitle) {
+      values.shift(); // Remove the first measure.
+
       var uploadVal = values.map(value => value[0]);
       var downloadVal = values.map(value => value[1]);
       var roundtripVal = values.map(value => value[2]);
