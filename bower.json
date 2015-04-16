@@ -1,14 +1,14 @@
 {
   "name": "latency-web-workers",
-  "version": "0.0.0",
+  "version": "0.0.1",
   "authors": [
     "Guillaume Marty <edo999@gmail.com>"
   ],
-  "description": "Measure the latency in web workers",
+  "description": "Measure the latency of Web workers",
   "keywords": [
-    "latency",
+    "web worker",
     "worker",
-    "web worker"
+    "latency"
   ],
   "license": "MIT",
   "private": true,

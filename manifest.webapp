@@ -1,7 +1,7 @@
 {
   "name": "Latency of Web workers",
-  "version": "0.0.0",
-  "description": "Measure the latency in web workers",
+  "version": "0.0.1",
+  "description": "Measure the latency of Web workers",
   "launch_path": "/index.html",
   "icons": {
     "16": "/img/icons/16.png",
