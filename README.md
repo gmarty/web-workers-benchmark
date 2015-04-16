@@ -14,3 +14,11 @@ different methods:
 For each method, the upload (main thread -> worker) and download (worker -> main
 thread) latencies are measured. The roundtrip is also measured using
 high-resolution timers.
+
+## Results
+
+Results as measured on a Flame
+
+![Barchart](https://rawgit.com/gmarty/latency-web-workers/master/img/barchart.svg)
+
+![Scattergraph](https://rawgit.com/gmarty/latency-web-workers/master/img/scattergraph.svg)
