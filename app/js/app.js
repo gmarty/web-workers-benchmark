@@ -1,9 +1,11 @@
+/* global mean, median, stdev, percentile */
+
 'use strict';
 
 import * as threads from 'components/threads/threads';
 import * as d3 from 'components/d3/d3.min';
-import /*global isNumber*/ 'components/node-isnumber/index';
-import /*global stats*/ 'components/node-stats-lite/stats';
+import 'components/node-isnumber/index';
+import 'components/node-stats-lite/stats';
 
 threads.manager({
   'latency-service': {
@@ -13,11 +15,12 @@ threads.manager({
 });
 
 const ITERATIONS = 100;
+const BROADCAST_CHANNEL_SUPPORT = 'BroadcastChannel' in window;
 
 var app = {
   client: threads.client('latency-service'),
   rawWorker: new Worker('workers/worker.js'),
-  channel: 'BroadcastChannel' in window ? new BroadcastChannel('latency') : {},
+  channel: BROADCAST_CHANNEL_SUPPORT ? new window.BroadcastChannel('latency') : {},
 
   elements: {
     reload: document.getElementById('reload'),
@@ -56,13 +59,13 @@ var app = {
 
   measureLatencyOfThreads: function(values) {
     var now = Date.now();
-    var highResolutionBefore = performance.now();
+    var highResolutionBefore = window.performance.now();
 
     this.client
       .call('ping', now)
       .then(timestamps => {
         var now = Date.now();
-        var highResolutionAfter = performance.now();
+        var highResolutionAfter = window.performance.now();
         var value = [
           timestamps[0],
           now - timestamps[1],
@@ -82,13 +85,13 @@ var app = {
 
   measureLatencyOfWebWorkersWithPostMessage: function(values) {
     var now = Date.now();
-    var highResolutionBefore = performance.now();
+    var highResolutionBefore = window.performance.now();
 
     this.rawWorker.postMessage(now);
     this.rawWorker.onmessage = evt => {
       var timestamps = evt.data;
       var now = Date.now();
-      var highResolutionAfter = performance.now();
+      var highResolutionAfter = window.performance.now();
       var value = [
         timestamps[0],
         now - timestamps[1],
@@ -107,19 +110,19 @@ var app = {
   },
 
   measureLatencyOfWebWorkersWithBroadcastChannel: function(values) {
-    if (!BroadcastChannel) {
+    if (!BROADCAST_CHANNEL_SUPPORT) {
       // Not all browsers implement the BroadcastChannel API.
       return;
     }
 
     var now = Date.now();
-    var highResolutionBefore = performance.now();
+    var highResolutionBefore = window.performance.now();
 
     this.channel.postMessage(now);
     this.channel.onmessage = evt => {
       var timestamps = evt.data;
       var now = Date.now();
-      var highResolutionAfter = performance.now();
+      var highResolutionAfter = window.performance.now();
       var value = [
         timestamps[0],
         now - timestamps[1],
@@ -153,12 +156,12 @@ var app = {
     var uploadStdev = stdev(uploadVal);
     var downloadStdev = stdev(downloadVal);
     var roundtripStdev = stdev(roundtripVal);
-    var upload90Percentile = percentile(uploadVal, .90);
-    var download90Percentile = percentile(downloadVal, .90);
-    var roundtrip90Percentile = percentile(roundtripVal, .90);
-    var upload95Percentile = percentile(uploadVal, .95);
-    var download95Percentile = percentile(downloadVal, .95);
-    var roundtrip95Percentile = percentile(roundtripVal, .95);
+    var upload90Percentile = percentile(uploadVal, 0.90);
+    var download90Percentile = percentile(downloadVal, 0.90);
+    var roundtrip90Percentile = percentile(roundtripVal, 0.90);
+    var upload95Percentile = percentile(uploadVal, 0.95);
+    var download95Percentile = percentile(downloadVal, 0.95);
+    var roundtrip95Percentile = percentile(roundtripVal, 0.95);
 
     var tpl = `
         <header>
@@ -230,7 +233,7 @@ var app = {
     this.graph.g.height = 240 - this.graph.g.margin.top - this.graph.g.margin.bottom;
 
     this.graph.g.x = d3.scale.ordinal()
-      .rangeRoundBands([0, this.graph.g.width], .1);
+      .rangeRoundBands([0, this.graph.g.width], 0.1);
 
     this.graph.g.y = d3.scale.linear()
       .domain([0, this.graph.g.maxY])
