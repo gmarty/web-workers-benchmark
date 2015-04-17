@@ -1,3 +1,4 @@
+/* global threads */
 /* global mean, median, stdev, percentile */
 
 'use strict';
@@ -7,18 +8,23 @@ import * as d3 from 'components/d3/d3.min';
 import 'components/node-isnumber/index';
 import 'components/node-stats-lite/stats';
 
-threads.manager({
-  'latency-service': {
-    src: 'workers/service.js',
-    type: 'worker'
-  }
-});
-
 const ITERATIONS = 100;
 const BROADCAST_CHANNEL_SUPPORT = 'BroadcastChannel' in window;
 
+var threadClient = null;
+if (BROADCAST_CHANNEL_SUPPORT) {
+  threads.manager({
+    'latency-service': {
+      src: 'workers/service.js',
+      type: 'worker'
+    }
+  });
+
+  threadClient = threads.client('latency-service');
+}
+
 var app = {
-  client: threads.client('latency-service'),
+  client: threadClient,
   rawWorker: new Worker('workers/worker.js'),
   channel: BROADCAST_CHANNEL_SUPPORT ? new window.BroadcastChannel('latency') : {},
 
@@ -58,6 +64,11 @@ var app = {
   },
 
   measureLatencyOfThreads: function(values) {
+    if (!BROADCAST_CHANNEL_SUPPORT) {
+      // Not all browsers implement the BroadcastChannel API.
+      return;
+    }
+
     var now = Date.now();
     var highResolutionBefore = window.performance.now();
 
