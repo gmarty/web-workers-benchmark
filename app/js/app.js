@@ -58,123 +58,165 @@ var app = {
     this.initBarChart();
     this.initScatterPlot();
 
-    this.measureLatencyOfThreads([]);
-    this.measureLatencyOfWebWorkersWithPostMessage([]);
-    this.measureLatencyOfWebWorkersWithBroadcastChannel([]);
-  },
-
-  measureLatencyOfThreads: function(values) {
-    if (!BROADCAST_CHANNEL_SUPPORT) {
-      // Not all browsers implement the BroadcastChannel API.
-      return;
-    }
-
-    var now = Date.now();
-    var highResolutionBefore = window.performance.now();
-
-    this.client
-      .call('ping', now)
-      .then(timestamps => {
-        var now = Date.now();
-        var highResolutionAfter = window.performance.now();
-        var value = [
-          timestamps[0],
-          now - timestamps[1],
-          highResolutionAfter - highResolutionBefore
-        ];
-
-        values.push(value);
-
-        if (values.length <= ITERATIONS) {
-          this.measureLatencyOfThreads(values);
-        } else {
-          this.processData('threads library', values,
-            'threads');
-        }
+    Promise
+      .all([
+        this.measureLatencyOfWebWorkersWithPostMessage(),
+        this.measureLatencyOfWebWorkersWithBroadcastChannel(),
+        this.measureLatencyOfThreads()
+      ])
+      .then(dataSets => {
+        this.processData(dataSets);
+      })
+      .catch(error => {
+        console.log(error);
       });
   },
 
-  measureLatencyOfWebWorkersWithPostMessage: function(values) {
-    var now = Date.now();
-    var highResolutionBefore = window.performance.now();
-
-    this.rawWorker.postMessage(now);
-    this.rawWorker.onmessage = evt => {
-      var timestamps = evt.data;
-      var now = Date.now();
-      var highResolutionAfter = window.performance.now();
-      var value = [
-        timestamps[0],
-        now - timestamps[1],
-        highResolutionAfter - highResolutionBefore
-      ];
-
-      values.push(value);
-
-      if (values.length <= ITERATIONS) {
-        this.measureLatencyOfWebWorkersWithPostMessage(values);
-      } else {
-        this.processData('Web Workers with postMessage', values,
-          'postMessage');
+  measureLatencyOfThreads: function() {
+    return new Promise((resolve, reject) => {
+      if (!BROADCAST_CHANNEL_SUPPORT) {
+        reject('The BroadcastChannel API is not supported.');
       }
-    };
+
+      var values = [];
+      var benchmark = () => {
+        var now = Date.now();
+        var highResolutionBefore = window.performance.now();
+
+        this.client
+          .call('ping', now)
+          .then(timestamps => {
+            var now = Date.now();
+            var highResolutionAfter = window.performance.now();
+            var value = [
+              timestamps[0],
+              now - timestamps[1],
+              highResolutionAfter - highResolutionBefore
+            ];
+
+            values.push(value);
+
+            if (values.length <= ITERATIONS) {
+              benchmark(values);
+            } else {
+              resolve({
+                name: 'threads library',
+                shortName: 'threads',
+                values: values
+              });
+            }
+          });
+      };
+
+      benchmark();
+    });
   },
 
-  measureLatencyOfWebWorkersWithBroadcastChannel: function(values) {
-    if (!BROADCAST_CHANNEL_SUPPORT) {
-      // Not all browsers implement the BroadcastChannel API.
-      return;
-    }
+  measureLatencyOfWebWorkersWithPostMessage: function() {
+    return new Promise((resolve) => {
+      var values = [];
+      var benchmark = () => {
+        var now = Date.now();
+        var highResolutionBefore = window.performance.now();
 
-    var now = Date.now();
-    var highResolutionBefore = window.performance.now();
+        this.rawWorker.postMessage(now);
+        this.rawWorker.onmessage = evt => {
+          var timestamps = evt.data;
+          var now = Date.now();
+          var highResolutionAfter = window.performance.now();
+          var value = [
+            timestamps[0],
+            now - timestamps[1],
+            highResolutionAfter - highResolutionBefore
+          ];
 
-    this.channel.postMessage(now);
-    this.channel.onmessage = evt => {
-      var timestamps = evt.data;
-      var now = Date.now();
-      var highResolutionAfter = window.performance.now();
-      var value = [
-        timestamps[0],
-        now - timestamps[1],
-        highResolutionAfter - highResolutionBefore
-      ];
+          values.push(value);
 
-      values.push(value);
+          if (values.length <= ITERATIONS) {
+            benchmark(values);
+          } else {
+            resolve({
+              name: 'Web Workers with postMessage',
+              shortName: 'postMessage',
+              values: values
+            });
+          }
+        };
+      };
 
-      if (values.length <= ITERATIONS) {
-        this.measureLatencyOfWebWorkersWithBroadcastChannel(values);
-      } else {
-        this.processData('Web Workers with Broadcast Channel', values,
-          'BC channel');
-      }
-    };
+      benchmark();
+    });
   },
 
-  processData: function(title, values, shortTitle) {
-    values.shift(); // Remove the first measure.
+  measureLatencyOfWebWorkersWithBroadcastChannel: function() {
+    return new Promise((resolve, reject) => {
+      if (!BROADCAST_CHANNEL_SUPPORT) {
+        reject('The BroadcastChannel API is not supported.');
+      }
 
-    var uploadVal = values.map(value => value[0]);
-    var downloadVal = values.map(value => value[1]);
-    var roundtripVal = values.map(value => value[2]);
+      var values = [];
+      var benchmark = () => {
+        var now = Date.now();
+        var highResolutionBefore = window.performance.now();
 
-    var uploadMean = mean(uploadVal);
-    var downloadMean = mean(downloadVal);
-    var roundtripMean = mean(roundtripVal);
-    var uploadMedian = median(uploadVal);
-    var downloadMedian = median(downloadVal);
-    var roundtripMedian = median(roundtripVal);
-    var uploadStdev = stdev(uploadVal);
-    var downloadStdev = stdev(downloadVal);
-    var roundtripStdev = stdev(roundtripVal);
-    var upload90Percentile = percentile(uploadVal, 0.90);
-    var download90Percentile = percentile(downloadVal, 0.90);
-    var roundtrip90Percentile = percentile(roundtripVal, 0.90);
-    var upload95Percentile = percentile(uploadVal, 0.95);
-    var download95Percentile = percentile(downloadVal, 0.95);
-    var roundtrip95Percentile = percentile(roundtripVal, 0.95);
+        this.channel.postMessage(now);
+        this.channel.onmessage = evt => {
+          var timestamps = evt.data;
+          var now = Date.now();
+          var highResolutionAfter = window.performance.now();
+          var value = [
+            timestamps[0],
+            now - timestamps[1],
+            highResolutionAfter - highResolutionBefore
+          ];
 
-    var tpl = `
+          values.push(value);
+
+          if (values.length <= ITERATIONS) {
+            benchmark(values);
+          } else {
+            resolve({
+              name: 'Web Workers with Broadcast Channel',
+              shortName: 'BC channel',
+              values: values
+            });
+          }
+        };
+      };
+
+      benchmark();
+    });
+  },
+
+  processData: function(dataSets) {
+    dataSets.forEach(dataSet => {
+      dataSet.values.shift(); // Remove the first measure.
+
+      var title = dataSet.name;
+      var shortTitle = dataSet.shortName;
+      var values = dataSet.values;
+
+      var uploadVal = values.map(value => value[0]);
+      var downloadVal = values.map(value => value[1]);
+      var roundtripVal = values.map(value => value[2]);
+
+      var uploadMean = mean(uploadVal);
+      var downloadMean = mean(downloadVal);
+      var roundtripMean = mean(roundtripVal);
+      var uploadMedian = median(uploadVal);
+      var downloadMedian = median(downloadVal);
+      var roundtripMedian = median(roundtripVal);
+      var uploadStdev = stdev(uploadVal);
+      var downloadStdev = stdev(downloadVal);
+      var roundtripStdev = stdev(roundtripVal);
+      var upload90Percentile = percentile(uploadVal, 0.90);
+      var download90Percentile = percentile(downloadVal, 0.90);
+      var roundtrip90Percentile = percentile(roundtripVal, 0.90);
+      var upload95Percentile = percentile(uploadVal, 0.95);
+      var download95Percentile = percentile(downloadVal, 0.95);
+      var roundtrip95Percentile = percentile(roundtripVal, 0.95);
+
+      var tpl = `
         <header>
           <h2>${title}</h2>
         </header>
@@ -214,24 +256,25 @@ var app = {
         </table>
       `;
 
-    var container = document.createElement('div');
-    container.innerHTML = tpl;
-    this.elements.table.appendChild(container);
+      var container = document.createElement('div');
+      container.innerHTML = tpl;
+      this.elements.table.appendChild(container);
 
-    this.plotBarChart([
-      {name: 'x', value: roundtripMean},
-      {name: 'M', value: roundtripMedian},
-      {name: '90%', value: roundtrip90Percentile},
-      {name: '95%', value: roundtrip95Percentile}
-    ], shortTitle);
+      this.plotBarChart([
+        {name: 'x', value: roundtripMean},
+        {name: 'M', value: roundtripMedian},
+        {name: '90%', value: roundtrip90Percentile},
+        {name: '95%', value: roundtrip95Percentile}
+      ], shortTitle);
 
-    this.plotScatter(values.map((value, index) => {
-      return {
-        name: shortTitle,
-        value: value[2],
-        id: index
-      };
-    }));
+      this.plotScatter(values.map((value, index) => {
+        return {
+          name: shortTitle,
+          value: value[2],
+          id: index
+        };
+      }));
+    });
   },
 
   // Graph related methods.
@@ -314,7 +357,9 @@ var app = {
         .text(d => d.name);
     }
 
-    data.forEach(item => item.name += ` ${this.graph.g.set} `);
+    data.forEach(item => {
+      item.name += ` ${this.graph.g.set} `;
+    });
 
     this.graph.g.data = this.graph.g.data.concat(data);
 
