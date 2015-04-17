@@ -58,13 +58,19 @@ var app = {
     this.initBarChart();
     this.initScatterPlot();
 
-    Promise
-      .all([
-        this.measureLatencyOfWebWorkersWithPostMessage(),
-        this.measureLatencyOfWebWorkersWithBroadcastChannel(),
-        this.measureLatencyOfThreads()
-      ])
-      .then(dataSets => {
+    var dataSets = [];
+
+    this.measureLatencyOfWebWorkersWithPostMessage()
+      .then((dataSet) => {
+        dataSets.push(dataSet);
+        return this.measureLatencyOfWebWorkersWithBroadcastChannel();
+      })
+      .then((dataSet) => {
+        dataSets.push(dataSet);
+        return this.measureLatencyOfThreads();
+      })
+      .then((dataSet) => {
+        dataSets.push(dataSet);
         this.processData(dataSets);
       })
       .catch(error => {
@@ -78,7 +84,7 @@ var app = {
         reject('The BroadcastChannel API is not supported.');
       }
 
-      var values = [];
+      var dataSet = [];
       var benchmark = () => {
         var now = Date.now();
         var highResolutionBefore = window.performance.now();
@@ -88,21 +94,21 @@ var app = {
           .then(timestamps => {
             var now = Date.now();
             var highResolutionAfter = window.performance.now();
-            var value = [
+            var data = [
               timestamps[0],
               now - timestamps[1],
               highResolutionAfter - highResolutionBefore
             ];
 
-            values.push(value);
+            dataSet.push(data);
 
-            if (values.length <= ITERATIONS) {
-              benchmark(values);
+            if (dataSet.length <= ITERATIONS) {
+              benchmark(dataSet);
             } else {
               resolve({
                 name: 'threads library',
                 shortName: 'threads',
-                values: values
+                values: dataSet
               });
             }
           });
@@ -114,7 +120,7 @@ var app = {
 
   measureLatencyOfWebWorkersWithPostMessage: function() {
     return new Promise((resolve) => {
-      var values = [];
+      var dataSet = [];
       var benchmark = () => {
         var now = Date.now();
         var highResolutionBefore = window.performance.now();
@@ -124,21 +130,21 @@ var app = {
           var timestamps = evt.data;
           var now = Date.now();
           var highResolutionAfter = window.performance.now();
-          var value = [
+          var data = [
             timestamps[0],
             now - timestamps[1],
             highResolutionAfter - highResolutionBefore
           ];
 
-          values.push(value);
+          dataSet.push(data);
 
-          if (values.length <= ITERATIONS) {
-            benchmark(values);
+          if (dataSet.length <= ITERATIONS) {
+            benchmark(dataSet);
           } else {
             resolve({
               name: 'Web Workers with postMessage',
               shortName: 'postMessage',
-              values: values
+              values: dataSet
             });
           }
         };
@@ -154,7 +160,7 @@ var app = {
         reject('The BroadcastChannel API is not supported.');
       }
 
-      var values = [];
+      var dataSet = [];
       var benchmark = () => {
         var now = Date.now();
         var highResolutionBefore = window.performance.now();
@@ -164,21 +170,21 @@ var app = {
           var timestamps = evt.data;
           var now = Date.now();
           var highResolutionAfter = window.performance.now();
-          var value = [
+          var data = [
             timestamps[0],
             now - timestamps[1],
             highResolutionAfter - highResolutionBefore
           ];
 
-          values.push(value);
+          dataSet.push(data);
 
-          if (values.length <= ITERATIONS) {
-            benchmark(values);
+          if (dataSet.length <= ITERATIONS) {
+            benchmark(dataSet);
           } else {
             resolve({
               name: 'Web Workers with Broadcast Channel',
               shortName: 'BC channel',
-              values: values
+              values: dataSet
             });
           }
         };
