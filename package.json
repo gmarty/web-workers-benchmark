@@ -20,5 +20,9 @@
   "bugs": {
     "url": "https://github.com/gmarty/latency-web-workers/issues"
   },
-  "homepage": "https://github.com/gmarty/latency-web-workers"
+  "homepage": "https://github.com/gmarty/latency-web-workers",
+  "devDependencies": {
+    "fxos-build": "^0.5.0",
+    "gulp": "^3.8.11"
+  }
 }

@@ -1,0 +1,22 @@
+{
+	"curly": true,
+	"devel": false,
+	"esnext": true,
+	"expr": false,
+	"forin": false,
+	"latedef": "nofunc",
+	"newcap": true,
+	"noarg": true,
+	"nonew": false,
+	"quotmark": "single",
+	"undef": true,
+	"unused": "vars",
+	"strict": false,
+	"laxcomma": false,
+	"maxerr": 1000,
+	"maxlen": 120,
+	"proto": true,
+	"browser": true,
+	"node": true,
+	"worker": true
+}

@@ -21,7 +21,6 @@
   ],
   "dependencies": {
     "threads": "git@github.com:gaia-components/threads.git#master",
-    "alameda": "~0.2.0",
     "node-stats-lite": "git@github.com:brycebaril/node-stats-lite.git#~1.0.3",
     "node-isnumber": "git@github.com:brycebaril/node-isnumber.git",
     "gaia-header": "gaia-components/gaia-header#~0.8.1",
