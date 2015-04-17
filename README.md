@@ -1,4 +1,4 @@
-# ![Latency of Web workers](https://raw.githubusercontent.com/gmarty/latency-web-workers/master/img/icons/32.png "Latency of Web workers") Latency of Web workers
+# ![Latency of Web workers](https://raw.githubusercontent.com/gmarty/latency-web-workers/master/app/img/icons/32.png "Latency of Web workers") Latency of Web workers
 
 > Measure the latency of Web workers.
 
@@ -19,6 +19,6 @@ high-resolution timers.
 
 Results as measured on a Flame
 
-![Barchart](https://rawgit.com/gmarty/latency-web-workers/master/img/barchart.svg)
+![Barchart](https://rawgit.com/gmarty/latency-web-workers/master/app/img/barchart.svg)
 
-![Scattergraph](https://rawgit.com/gmarty/latency-web-workers/master/img/scattergraph.svg)
+![Scattergraph](https://rawgit.com/gmarty/latency-web-workers/master/app/img/scattergraph.svg)
