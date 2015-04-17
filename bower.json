@@ -20,6 +20,7 @@
     "tests"
   ],
   "dependencies": {
+    "fxos-mvc": "git@github.com:fxos/mvc.git",
     "threads": "git@github.com:gaia-components/threads.git#master",
     "node-stats-lite": "git@github.com:brycebaril/node-stats-lite.git#~1.0.3",
     "node-isnumber": "git@github.com:brycebaril/node-isnumber.git",
