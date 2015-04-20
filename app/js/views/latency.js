@@ -168,7 +168,7 @@ export default class LatencyView extends View {
 
     this.graph.g.color = d3.scale.category10();
 
-    this.graph.g.chart = d3.select('#barchart').append('svg')
+    this.graph.g.chart = d3.select(this.elements.barchart).append('svg')
       .attr('width', this.graph.g.width + this.graph.g.margin.left + this.graph.g.margin.right)
       .attr('height', this.graph.g.height + this.graph.g.margin.top + this.graph.g.margin.bottom).append('g')
       .attr('transform', `translate(${this.graph.g.margin.left},${this.graph.g.margin.top})`);
@@ -287,7 +287,7 @@ export default class LatencyView extends View {
 
     this.graph.s.color = d3.scale.category10();
 
-    this.graph.s.chart = d3.select('#scatterplot').append('svg')
+    this.graph.s.chart = d3.select(this.elements.scatterplot).append('svg')
       .attr('width', this.graph.s.width + this.graph.s.margin.left + this.graph.s.margin.right)
       .attr('height', this.graph.s.height + this.graph.s.margin.top + this.graph.s.margin.bottom).append('g')
       .attr('transform', `translate(${this.graph.s.margin.left},${this.graph.s.margin.top})`);
@@ -302,7 +302,7 @@ export default class LatencyView extends View {
     this.graph.s.xAxisEl
       .append('text')
       .attr('x', this.graph.s.width)
-      .attr('y', 0)
+      .attr('y', -6)
       .style('text-anchor', 'end')
       .text('Measure');
 

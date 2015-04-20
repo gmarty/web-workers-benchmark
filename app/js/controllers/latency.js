@@ -26,7 +26,7 @@ export default class LatencyController extends Controller {
     if (BROADCAST_CHANNEL_SUPPORT) {
       threads.manager({
         'latency-service': {
-          src: 'workers/service.js',
+          src: 'workers/latency-service.js',
           type: 'worker'
         }
       });
@@ -35,7 +35,7 @@ export default class LatencyController extends Controller {
     }
 
     this.client = threadClient;
-    this.rawWorker = new Worker('workers/worker.js');
+    this.rawWorker = new Worker('workers/latency-worker.js');
     this.channel = BROADCAST_CHANNEL_SUPPORT ? new window.BroadcastChannel('latency') : {};
 
     // Start benchmarking.
