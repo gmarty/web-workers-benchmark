@@ -41,6 +41,16 @@ h1, h2 {
 h2 {
   margin-top: 1rem;
   margin-bottom: 1rem;
+  font-size: 2rem;
+}
+
+#home > button {
+  display: block;
+  border: none;
+  border-radius: 0;
+  background: lightgrey;
+  width: 100%;
+  margin-top: 1rem;
 }
 
 table {

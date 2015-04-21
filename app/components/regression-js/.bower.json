@@ -1,0 +1,25 @@
+{
+  "name": "regression-js",
+  "version": "1.2.0",
+  "homepage": "https://github.com/Tom-Alexander/regression-js",
+  "authors": [
+    "Tom-Alexander <me@tomalexander.co.nz>"
+  ],
+  "description": "Javascript least squares data fitting",
+  "license": "MIT",
+  "ignore": [
+    "node_modules",
+    "bower_components",
+    "example/*"
+  ],
+  "_release": "1.2.0",
+  "_resolution": {
+    "type": "version",
+    "tag": "1.2.0",
+    "commit": "e60d741a617fdcab15d51e624218caa2b59da99f"
+  },
+  "_source": "git://github.com/Tom-Alexander/regression-js.git",
+  "_target": "~1.2.0",
+  "_originalSource": "regression-js",
+  "_direct": true
+}

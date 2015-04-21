@@ -1,20 +1,20 @@
 /* global threads */
 
-/* Benchmark the latency of Web workers. */
+/* Benchmark the impact of message size on Web workers latency. */
 
 import { Controller } from 'components/fxos-mvc/dist/mvc';
 
-import LatencyView from 'js/views/latency';
+import MessageView from 'js/views/message';
 
 import * as threads from 'components/threads/threads';
 
 const ITERATIONS = 100;
 const BROADCAST_CHANNEL_SUPPORT = 'BroadcastChannel' in window;
 
-export default class LatencyController extends Controller {
+export default class MessageController extends Controller {
   constructor(options) {
-    this.view = new LatencyView({
-      el: document.getElementById('latency')
+    this.view = new MessageView({
+      el: document.getElementById('message')
     });
     super(options);
   }
@@ -25,18 +25,18 @@ export default class LatencyController extends Controller {
     var threadClient = null;
     if (BROADCAST_CHANNEL_SUPPORT) {
       threads.manager({
-        'latency-service': {
-          src: 'workers/latency-service.js',
+        'message-service': {
+          src: 'workers/message-service.js',
           type: 'worker'
         }
       });
 
-      threadClient = threads.client('latency-service');
+      threadClient = threads.client('message-service');
     }
 
     this.client = threadClient;
-    this.rawWorker = new Worker('workers/latency-worker.js');
-    this.channel = BROADCAST_CHANNEL_SUPPORT ? new window.BroadcastChannel('latency') : {};
+    this.rawWorker = new Worker('workers/message-worker.js');
+    this.channel = BROADCAST_CHANNEL_SUPPORT ? new window.BroadcastChannel('message') : {};
 
     // Start benchmarking.
     this.init();
@@ -67,19 +67,18 @@ export default class LatencyController extends Controller {
 
   startMeasuring() {
     this.view.initTable();
-    this.view.initBarChart();
     this.view.initScatterPlot();
 
     var dataSets = [];
 
-    this.measureLatencyOfWebWorkersWithPostMessage()
+    this.benchmarkWebWorkersWithPostMessage()
       .then((dataSet) => {
         dataSets.push(dataSet);
-        return this.measureLatencyOfWebWorkersWithBroadcastChannel();
+        return this.benchmarkWebWorkersWithBroadcastChannel();
       })
       .then((dataSet) => {
         dataSets.push(dataSet);
-        return this.measureLatencyOfThreads();
+        return this.benchmarkThreads();
       })
       .then((dataSet) => {
         dataSets.push(dataSet);
@@ -90,7 +89,9 @@ export default class LatencyController extends Controller {
       });
   }
 
-  measureLatencyOfThreads() {
+  benchmarkThreads() {
+    var size = 0;
+
     return new Promise((resolve, reject) => {
       if (!BROADCAST_CHANNEL_SUPPORT) {
         reject('The BroadcastChannel API is not supported.');
@@ -98,18 +99,26 @@ export default class LatencyController extends Controller {
 
       var dataSet = [];
       var benchmark = () => {
+        var obj = this.getObject(size);
         var now = Date.now();
         var highResolutionBefore = window.performance.now();
 
         this.client
-          .call('ping', now)
-          .then(timestamps => {
+          .call('ping', {
+            m: obj,
+            t: now,
+            s: size
+          })
+          .then(obj => {
+            var timestamps = obj.t;
+            var size = obj.s;
             var now = Date.now();
             var highResolutionAfter = window.performance.now();
             var data = [
               timestamps[0],
               now - timestamps[1],
-              highResolutionAfter - highResolutionBefore
+              highResolutionAfter - highResolutionBefore,
+              size
             ];
 
             dataSet.push(data);
@@ -124,28 +133,39 @@ export default class LatencyController extends Controller {
               });
             }
           });
+
+        size += (1024 * 20);
       };
 
       benchmark();
     });
   }
 
-  measureLatencyOfWebWorkersWithPostMessage() {
+  benchmarkWebWorkersWithPostMessage() {
+    var size = 0;
+
     return new Promise((resolve) => {
       var dataSet = [];
       var benchmark = () => {
+        var obj = this.getObject(size);
         var now = Date.now();
         var highResolutionBefore = window.performance.now();
 
-        this.rawWorker.postMessage(now);
+        this.rawWorker.postMessage({
+          m: obj,
+          t: now,
+          s: size
+        });
         this.rawWorker.onmessage = evt => {
-          var timestamps = evt.data;
+          var timestamps = evt.data.t;
+          var size = evt.data.s;
           var now = Date.now();
           var highResolutionAfter = window.performance.now();
           var data = [
             timestamps[0],
             now - timestamps[1],
-            highResolutionAfter - highResolutionBefore
+            highResolutionAfter - highResolutionBefore,
+            size
           ];
 
           dataSet.push(data);
@@ -160,13 +180,17 @@ export default class LatencyController extends Controller {
             });
           }
         };
+
+        size += (1024 * 20);
       };
 
       benchmark();
     });
   }
 
-  measureLatencyOfWebWorkersWithBroadcastChannel() {
+  benchmarkWebWorkersWithBroadcastChannel() {
+    var size = 0;
+
     return new Promise((resolve, reject) => {
       if (!BROADCAST_CHANNEL_SUPPORT) {
         reject('The BroadcastChannel API is not supported.');
@@ -174,18 +198,25 @@ export default class LatencyController extends Controller {
 
       var dataSet = [];
       var benchmark = () => {
+        var obj = this.getObject(size);
         var now = Date.now();
         var highResolutionBefore = window.performance.now();
 
-        this.channel.postMessage(now);
+        this.channel.postMessage({
+          m: obj,
+          t: now,
+          s: size
+        });
         this.channel.onmessage = evt => {
-          var timestamps = evt.data;
+          var timestamps = evt.data.t;
+          var size = evt.data.s;
           var now = Date.now();
           var highResolutionAfter = window.performance.now();
           var data = [
             timestamps[0],
             now - timestamps[1],
-            highResolutionAfter - highResolutionBefore
+            highResolutionAfter - highResolutionBefore,
+            size
           ];
 
           dataSet.push(data);
@@ -200,9 +231,21 @@ export default class LatencyController extends Controller {
             });
           }
         };
+
+        size += (1024 * 20);
       };
 
       benchmark();
     });
+  }
+
+  getObject(size = 0) {
+    var obj = new Uint8Array(size);
+
+    for (var i = 0; i < size; i++) {
+      obj[i] = Math.random() * 0xFF;
+    }
+
+    return obj;
   }
 }

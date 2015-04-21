@@ -1,24 +1,23 @@
+/* global regression */
 /* global mean, median, stdev, percentile */
 
 import { View } from 'components/fxos-mvc/dist/mvc';
 
 import * as d3 from 'components/d3/d3.min';
+import 'components/regression-js/build/regression.min';
 import 'components/node-isnumber/index';
 import 'components/node-stats-lite/stats';
 
-const ITERATIONS = 100;
-
 var template = `
   <gaia-header action="back">
-    <h1>Latency of Web workers</h1>
+    <h1>Message size of Web workers</h1>
     <button id="reload" data-icon="reload"></button>
   </gaia-header>
   <div id="table"></div>
-  <div id="barchart"></div>
   <div id="scatterplot"></div>
   `;
 
-export default class LatencyView extends View {
+export default class MessageView extends View {
   constructor(options) {
     this.graph = {};
 
@@ -37,7 +36,6 @@ export default class LatencyView extends View {
     this.elements = {
       header: this.$('gaia-header'),
       table: this.$('#table'),
-      barchart: this.$('#barchart'),
       scatterplot: this.$('#scatterplot')
     };
 
@@ -126,18 +124,11 @@ export default class LatencyView extends View {
       container.innerHTML = tpl;
       this.elements.table.appendChild(container);
 
-      this.plotBarChart([
-        {name: 'x', value: roundtripMean},
-        {name: 'M', value: roundtripMedian},
-        {name: '90%', value: roundtrip90Percentile},
-        {name: '95%', value: roundtrip95Percentile}
-      ], shortTitle);
-
-      this.plotScatter(values.map((value, index) => {
+      this.plotScatter(values.map(value => {
         return {
           name: shortTitle,
           value: value[2],
-          id: index
+          size: value[3]
         };
       }));
     });
@@ -148,124 +139,6 @@ export default class LatencyView extends View {
   }
 
   // Graph related methods.
-  initBarChart() {
-    this.elements.barchart.innerHTML = '';
-
-    this.graph.g = {};
-    this.graph.g.margin = {top: 5, right: 45, bottom: 30, left: 30};
-    this.graph.g.width = 320 - this.graph.g.margin.left - this.graph.g.margin.right;
-    this.graph.g.height = 240 - this.graph.g.margin.top - this.graph.g.margin.bottom;
-
-    this.graph.g.x = d3.scale.ordinal()
-      .rangeRoundBands([0, this.graph.g.width], 0.1);
-
-    this.graph.g.y = d3.scale.linear()
-      .domain([0, this.graph.g.maxY])
-      .range([this.graph.g.height, 0]);
-
-    this.graph.g.xAxis = d3.svg.axis()
-      .scale(this.graph.g.x)
-      .orient('bottom');
-
-    this.graph.g.yAxis = d3.svg.axis()
-      .scale(this.graph.g.y)
-      .orient('left');
-
-    this.graph.g.color = d3.scale.category10();
-
-    this.graph.g.chart = d3.select(this.elements.barchart).append('svg')
-      .attr('width', this.graph.g.width + this.graph.g.margin.left + this.graph.g.margin.right)
-      .attr('height', this.graph.g.height + this.graph.g.margin.top + this.graph.g.margin.bottom).append('g')
-      .attr('transform', `translate(${this.graph.g.margin.left},${this.graph.g.margin.top})`);
-
-    this.graph.g.xAxisEl = this.graph.g.chart.append('g')
-      .attr('class', 'x axis')
-      .attr('transform', `translate(0,${this.graph.g.height})`);
-
-    this.graph.g.yAxisEl = this.graph.g.chart.append('g')
-      .attr('class', 'y axis');
-
-    this.graph.g.yAxisEl
-      .append('text')
-      .attr('transform', 'rotate(-90)')
-      .attr('y', 6)
-      .attr('dy', '.71em')
-      .style('text-anchor', 'end')
-      .text('Latency in ms');
-
-    this.graph.g.maxY = 0;
-    this.graph.g.set = 0;
-    this.graph.g.data = [];
-  }
-
-  plotBarChart(data, title) {
-    if (this.graph.g.set === 1) {
-      this.graph.g.x.domain(data.map(d => d.name));
-
-      // Captions for the different statistic functions plotted.
-      var caption = this.graph.g.chart.append('g')
-        .attr('class', 'caption')
-        .attr('transform', `translate(${this.graph.g.margin.right},0)`);
-
-      var legend = caption.selectAll('.legend')
-        .data(data)
-        .enter().append('g')
-        .attr('class', 'legend')
-        .attr('transform', (d, i) => `translate(0,${(i * 20)})`);
-
-      legend.append('rect')
-        .attr('x', this.graph.g.width - 18)
-        .attr('width', 18)
-        .attr('height', 18)
-        .style('fill', d => this.graph.g.color(d.name));
-
-      legend.append('text')
-        .attr('x', this.graph.g.width - 24)
-        .attr('y', 9)
-        .attr('dy', '.35em')
-        .style('text-anchor', 'end')
-        .text(d => d.name);
-    }
-
-    data.forEach(item => {
-      item.name += ` ${this.graph.g.set} `;
-    });
-
-    this.graph.g.data = this.graph.g.data.concat(data);
-
-    // Caption for each measured set.
-    this.graph.g.xAxisEl
-      .append('text')
-      .attr('transform', `translate(${(this.graph.g.set * this.graph.g.width / 3)},12)`)
-      .attr('y', 6)
-      .attr('dy', '.71em')
-      .text(` ${title} `);
-
-    this.graph.g.set++;
-
-    if (this.graph.g.set < 3) {
-      return;
-    }
-
-    this.graph.g.maxY = d3.max(this.graph.g.data, d => d.value);
-
-    this.graph.g.x.domain(this.graph.g.data.map(d => d.name));
-    this.graph.g.y.domain([0, this.graph.g.maxY]);
-
-    this.graph.g.xAxisEl.call(this.graph.g.xAxis);
-    this.graph.g.yAxisEl.call(this.graph.g.yAxis);
-
-    this.graph.g.chart.selectAll('.bar')
-      .data(this.graph.g.data)
-      .enter().append('rect')
-      .attr('class', 'bar')
-      .attr('x', d => this.graph.g.x(d.name))
-      .attr('y', d => this.graph.g.y(d.value))
-      .attr('height', d => this.graph.g.height - this.graph.g.y(d.value))
-      .attr('width', this.graph.g.x.rangeBand())
-      .style('fill', d => this.graph.g.color(d.name.split(' ')[0]));
-  }
-
   initScatterPlot() {
     this.elements.scatterplot.innerHTML = '';
 
@@ -275,7 +148,7 @@ export default class LatencyView extends View {
     this.graph.s.height = 240 - this.graph.s.margin.top - this.graph.s.margin.bottom;
 
     this.graph.s.x = d3.scale.linear()
-      .domain([0, ITERATIONS])
+      .domain([0, 1])
       .range([0, this.graph.s.width]);
 
     this.graph.s.y = d3.scale.linear()
@@ -309,7 +182,7 @@ export default class LatencyView extends View {
       .attr('x', this.graph.s.width)
       .attr('y', -6)
       .style('text-anchor', 'end')
-      .text('Measure');
+      .text('Message size in kB');
 
     this.graph.s.yAxisEl
       .append('text')
@@ -329,12 +202,10 @@ export default class LatencyView extends View {
 
     this.graph.s.set++;
 
-    if (this.graph.s.set < 3) {
-      return;
-    }
-
+    this.graph.s.maxX = d3.max(this.graph.s.data, d => d.size);
     this.graph.s.maxY = d3.max(this.graph.s.data, d => d.value);
 
+    this.graph.s.x.domain([0, this.graph.s.maxX]);
     this.graph.s.y.domain([0, this.graph.s.maxY]);
 
     this.graph.s.xAxisEl.call(this.graph.s.xAxis);
@@ -345,10 +216,27 @@ export default class LatencyView extends View {
       .enter().append('circle')
       .attr('class', 'dot')
       .attr('r', 2)
-      .attr('cx', d => this.graph.s.x(d.id))
+      .attr('cx', d => this.graph.s.x(d.size))
       .attr('cy', d => this.graph.s.y(d.value))
       .style('fill', d => this.graph.s.color(d.name));
 
+    // Regression line
+    var { equation } = regression('linear', data.map(d => [d.size, d.value]));
+
+    this.graph.s.chart.append('line')
+      .attr('class', 'regression')
+      .attr('x1', this.graph.s.x(0))
+      .attr('y1', this.graph.s.y(equation[1]))
+      .attr('x2', this.graph.s.x(this.graph.s.maxX))
+      .attr('y2', this.graph.s.y((this.graph.s.maxX * equation[0]) + equation[1]))
+      .style('stroke-width', 2)
+      .style('stroke', this.graph.s.color(data[0].name));
+
+    if (this.graph.s.set < 3) {
+      return;
+    }
+
+    // Legend
     var legend = this.graph.s.chart.selectAll('.legend')
       .data(this.graph.s.color.domain())
       .enter().append('g')

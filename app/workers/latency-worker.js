@@ -1,6 +1,7 @@
 'use strict';
 
-var channel = 'BroadcastChannel' in self ? new BroadcastChannel('latency') : {};
+const BROADCAST_CHANNEL_SUPPORT = 'BroadcastChannel' in self;
+var channel = BROADCAST_CHANNEL_SUPPORT ? new BroadcastChannel('latency') : {};
 
 onmessage = function(evt) {
   var timestamp = evt.data;

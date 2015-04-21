@@ -26,6 +26,7 @@
     "node-isnumber": "git@github.com:brycebaril/node-isnumber.git",
     "gaia-header": "gaia-components/gaia-header#~0.8.1",
     "gaia-fonts": "gaia-components/gaia-fonts#~0.2.1",
-    "d3": "~3.5.5"
+    "d3": "~3.5.5",
+    "regression-js": "~1.2.0"
   }
 }
