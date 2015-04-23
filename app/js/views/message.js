@@ -63,6 +63,7 @@ export default class MessageView extends View {
       var uploadVal = values.map(value => value[0]);
       var downloadVal = values.map(value => value[1]);
       var roundtripVal = values.map(value => value[2]);
+      var roundtripCorrectedVal = values.map(value => value[3] / value[2]);
 
       var uploadMean = mean(uploadVal);
       var downloadMean = mean(downloadVal);
@@ -79,6 +80,10 @@ export default class MessageView extends View {
       var upload95Percentile = percentile(uploadVal, 0.95);
       var download95Percentile = percentile(downloadVal, 0.95);
       var roundtrip95Percentile = percentile(roundtripVal, 0.95);
+      // 1024 is to get bytes.
+      // Value is round trip, so we need to divide it by 2.
+      // Then multiply by the duration of a frame (16 ms).
+      var maxMessageSize = mean(roundtripCorrectedVal) * 1024 / 2 * 16;
 
       var tpl = `
         <header>
@@ -118,6 +123,7 @@ export default class MessageView extends View {
             <td>${(roundtrip95Percentile).toFixed(3)}</td>
           </tr>
         </table>
+        <p>Keep message size under ~${this.humanizeSize(maxMessageSize)}.</p>
       `;
 
       var container = document.createElement('div');
@@ -132,6 +138,13 @@ export default class MessageView extends View {
         };
       }));
     });
+  }
+
+  humanizeSize(bytes = 0) {
+    var units = ['B', 'kB', 'MB', 'GB', 'TB', 'PB'];
+
+    var e = Math.max(Math.floor(Math.log(bytes) / Math.log(1024)), 0);
+    return `${Math.round(bytes / Math.pow(1024, e))} ${units[e]}`;
   }
 
   initTable() {
