@@ -1,11 +1,10 @@
-# ![Latency of Web workers](https://raw.githubusercontent.com/gmarty/latency-web-workers/master/app/img/icons/32.png "Latency of Web workers") Latency of Web workers
+# ![Web workers benchmark](https://raw.githubusercontent.com/gmarty/latency-web-workers/master/app/img/icons/32.png "Web workers benchmark") Web workers benchmark
 
-> Measure the latency of Web workers.
+> Benchmark various aspects of Web workers.
 
 ## What?
 
-A technical app to measure the latency of communications with Web workers using
-different methods:
+A technical app to benchmark Web workers using different methods:
 
 * [postMessage](https://developer.mozilla.org/en-US/docs/Web/API/Worker/postMessage)
 * [BroadcastChannel](https://developer.mozilla.org/en-US/docs/Web/API/BroadcastChannel/BroadcastChannel)

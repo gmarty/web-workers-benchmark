@@ -1,10 +1,10 @@
 {
-  "name": "latency-web-workers",
+  "name": "web-workers-benchmark",
   "version": "0.0.1",
   "authors": [
     "Guillaume Marty <edo999@gmail.com>"
   ],
-  "description": "Measure the latency of Web workers",
+  "description": "Benchmark various aspects of Web workers.",
   "keywords": [
     "web worker",
     "worker",

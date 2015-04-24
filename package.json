@@ -1,7 +1,7 @@
 {
-  "name": "latency-web-workers",
+  "name": "web-workers-benchmark",
   "version": "0.0.1",
-  "description": "Measure the latency of Web workers",
+  "description": "Benchmark various aspects of Web workers.",
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
