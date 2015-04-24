@@ -166,7 +166,8 @@ export default class LatencyView extends View {
 
     this.graph.g.xAxis = d3.svg.axis()
       .scale(this.graph.g.x)
-      .orient('bottom');
+      .orient('bottom')
+      .tickFormat(d => d.split(' ')[0]);
 
     this.graph.g.yAxis = d3.svg.axis()
       .scale(this.graph.g.y)
@@ -177,7 +178,9 @@ export default class LatencyView extends View {
     this.graph.g.chart = d3.select(this.elements.barchart).append('svg')
       .attr('width', this.graph.g.width + this.graph.g.margin.left + this.graph.g.margin.right)
       .attr('height', this.graph.g.height + this.graph.g.margin.top + this.graph.g.margin.bottom).append('g')
-      .attr('transform', `translate(${this.graph.g.margin.left},${this.graph.g.margin.top})`);
+      .attr('transform', `translate(${this.graph.g.margin.left},${this.graph.g.margin.top})`)
+      .style('font-size', '12px')
+      .style('font-family', 'Arial');
 
     this.graph.g.xAxisEl = this.graph.g.chart.append('g')
       .attr('class', 'x axis')
@@ -192,7 +195,7 @@ export default class LatencyView extends View {
       .attr('y', 6)
       .attr('dy', '.71em')
       .style('text-anchor', 'end')
-      .text('Latency in ms');
+      .text('Latency (ms)');
 
     this.graph.g.maxY = 0;
     this.graph.g.set = 0;
@@ -253,7 +256,10 @@ export default class LatencyView extends View {
     this.graph.g.x.domain(this.graph.g.data.map(d => d.name));
     this.graph.g.y.domain([0, this.graph.g.maxY]);
 
-    this.graph.g.xAxisEl.call(this.graph.g.xAxis);
+    this.graph.g.xAxisEl
+      .append('g')
+      .style('font-size', '8px')
+      .call(this.graph.g.xAxis);
     this.graph.g.yAxisEl.call(this.graph.g.yAxis);
 
     this.graph.g.chart.selectAll('.bar')
@@ -296,7 +302,9 @@ export default class LatencyView extends View {
     this.graph.s.chart = d3.select(this.elements.scatterplot).append('svg')
       .attr('width', this.graph.s.width + this.graph.s.margin.left + this.graph.s.margin.right)
       .attr('height', this.graph.s.height + this.graph.s.margin.top + this.graph.s.margin.bottom).append('g')
-      .attr('transform', `translate(${this.graph.s.margin.left},${this.graph.s.margin.top})`);
+      .attr('transform', `translate(${this.graph.s.margin.left},${this.graph.s.margin.top})`)
+      .style('font-size', '12px')
+      .style('font-family', 'Arial');
 
     this.graph.s.xAxisEl = this.graph.s.chart.append('g')
       .attr('class', 'x axis')
@@ -318,7 +326,7 @@ export default class LatencyView extends View {
       .attr('y', 6)
       .attr('dy', '.71em')
       .style('text-anchor', 'end')
-      .text('Latency in ms');
+      .text('Latency (ms)');
 
     this.graph.s.maxY = 0;
     this.graph.s.set = 0;

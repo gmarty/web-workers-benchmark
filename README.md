@@ -16,8 +16,14 @@ high-resolution timers.
 
 ## Results
 
-Results as measured on a Flame
+Results measured on a Flame.
 
-![Barchart](https://rawgit.com/gmarty/latency-web-workers/master/app/img/barchart.svg)
+### Latency
 
-![Scattergraph](https://rawgit.com/gmarty/latency-web-workers/master/app/img/scattergraph.svg)
+![Latency](https://rawgit.com/gmarty/latency-web-workers/master/app/img/latency-barchart.svg)
+
+![Latency scatterplot](https://rawgit.com/gmarty/latency-web-workers/master/app/img/latency-scatter-plot.svg)
+
+### Transfer speed
+
+![Speed transfer](https://rawgit.com/gmarty/latency-web-workers/master/app/img/transfer-speed-scatter-plot.svg)

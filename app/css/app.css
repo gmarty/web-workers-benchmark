@@ -84,8 +84,3 @@ p.fine-prints {
   margin: 0.5rem 1rem;
   line-height: 1rem;
 }
-
-/* Graph */
-.x.axis g text {
-  font-size: 8px;
-}

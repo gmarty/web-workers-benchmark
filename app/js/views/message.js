@@ -173,7 +173,8 @@ export default class MessageView extends View {
 
     this.graph.s.xAxis = d3.svg.axis()
       .scale(this.graph.s.x)
-      .orient('bottom');
+      .orient('bottom')
+      .tickFormat(d => `${Math.round(d / 1024)}`);
 
     this.graph.s.yAxis = d3.svg.axis()
       .scale(this.graph.s.y)
@@ -184,7 +185,9 @@ export default class MessageView extends View {
     this.graph.s.chart = d3.select(this.elements.scatterplot).append('svg')
       .attr('width', this.graph.s.width + this.graph.s.margin.left + this.graph.s.margin.right)
       .attr('height', this.graph.s.height + this.graph.s.margin.top + this.graph.s.margin.bottom).append('g')
-      .attr('transform', `translate(${this.graph.s.margin.left},${this.graph.s.margin.top})`);
+      .attr('transform', `translate(${this.graph.s.margin.left},${this.graph.s.margin.top})`)
+      .style('font-size', '12px')
+      .style('font-family', 'Arial');
 
     this.graph.s.xAxisEl = this.graph.s.chart.append('g')
       .attr('class', 'x axis')
@@ -198,7 +201,7 @@ export default class MessageView extends View {
       .attr('x', this.graph.s.width)
       .attr('y', -6)
       .style('text-anchor', 'end')
-      .text('Message size in kB');
+      .text('Message size (kB)');
 
     this.graph.s.yAxisEl
       .append('text')
@@ -206,7 +209,7 @@ export default class MessageView extends View {
       .attr('y', 6)
       .attr('dy', '.71em')
       .style('text-anchor', 'end')
-      .text('Latency in ms');
+      .text('Latency (ms)');
 
     this.graph.s.maxY = 0;
     this.graph.s.set = 0;
