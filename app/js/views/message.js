@@ -8,9 +8,11 @@ import 'components/regression-js/build/regression.min';
 import 'components/node-isnumber/index';
 import 'components/node-stats-lite/stats';
 
+const SIZE_UNIT = 1024; // 1 B
+
 var template = `
   <gaia-header action="back">
-    <h1>Message size of Web workers</h1>
+    <h1>Transfer speed of Web workers</h1>
     <button id="reload" data-icon="reload"></button>
   </gaia-header>
   <div id="table"></div>
@@ -60,9 +62,9 @@ export default class MessageView extends View {
       var shortTitle = dataSet.shortName;
       var values = dataSet.values;
 
-      var uploadVal = values.map(value => value[0]);
-      var downloadVal = values.map(value => value[1]);
-      var roundtripVal = values.map(value => value[2]);
+      var uploadVal = values.map(value => value[3] / value[0] / SIZE_UNIT);
+      var downloadVal = values.map(value => value[3] / value[1] / SIZE_UNIT);
+      var roundtripVal = values.map(value => value[3] / value[2] / SIZE_UNIT);
       var roundtripCorrectedVal = values.map(value => value[3] / value[2]);
 
       var uploadMean = mean(uploadVal);
@@ -123,6 +125,7 @@ export default class MessageView extends View {
             <td>${(roundtrip95Percentile).toFixed(3)}</td>
           </tr>
         </table>
+        <p class="fine-prints">Unit is transfer speed in ${this.humanizeSize(SIZE_UNIT * 1.024)} / ms.</p>
         <p>Keep message size under ~${this.humanizeSize(maxMessageSize)}.</p>
       `;
 

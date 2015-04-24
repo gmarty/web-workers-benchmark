@@ -9,7 +9,7 @@ var template = `
     <h2>Latency</h2>
   </button>
   <button class="message">
-    <h2>Message size</h2>
+    <h2>Transfer speed</h2>
   </button>
   `;
 

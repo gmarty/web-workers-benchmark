@@ -120,6 +120,7 @@ export default class LatencyView extends View {
             <td>${(roundtrip95Percentile).toFixed(3)}</td>
           </tr>
         </table>
+        <p class="fine-prints">Unit is latency in ms.</p>
       `;
 
       var container = document.createElement('div');

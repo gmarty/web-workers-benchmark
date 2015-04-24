@@ -44,6 +44,10 @@ h2 {
   font-size: 2rem;
 }
 
+p {
+  margin: 1rem;
+}
+
 #home > button {
   display: block;
   border: none;
@@ -71,7 +75,14 @@ table th {
 table td {
   border-bottom: .1rem solid lightgrey;
   border-right: .1rem solid lightgrey;
-  padding: 1rem;
+  padding: .5rem;
+}
+
+p.fine-prints {
+  font-size: .8rem;
+  color: grey;
+  margin: 0.5rem 1rem;
+  line-height: 1rem;
 }
 
 /* Graph */
