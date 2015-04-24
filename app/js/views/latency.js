@@ -55,6 +55,9 @@ export default class LatencyView extends View {
   }
 
   processData(dataSets) {
+    var barChartData = [];
+    var scatterPlotData = [];
+
     dataSets.forEach(dataSet => {
       dataSet.values.shift(); // Remove the first measure.
 
@@ -127,21 +130,30 @@ export default class LatencyView extends View {
       container.innerHTML = tpl;
       this.elements.table.appendChild(container);
 
-      this.plotBarChart([
-        {name: 'x', value: roundtripMean},
-        {name: 'M', value: roundtripMedian},
-        {name: '90%', value: roundtrip90Percentile},
-        {name: '95%', value: roundtrip95Percentile}
-      ], shortTitle);
+      barChartData.push({
+        data: [
+          {name: 'x', value: roundtripMean},
+          {name: 'M', value: roundtripMedian},
+          {name: '90%', value: roundtrip90Percentile},
+          {name: '95%', value: roundtrip95Percentile}
+        ],
+        title: shortTitle
+      });
 
-      this.plotScatter(values.map((value, index) => {
-        return {
-          name: shortTitle,
-          value: value[2],
-          id: index
-        };
-      }));
+      scatterPlotData.push({
+        data: values.map((value, index) => {
+          return {
+            name: shortTitle,
+            value: value[2],
+            id: index
+          };
+        }),
+        roundtripMean: roundtripMean
+      });
     });
+
+    this.plotBarChart(barChartData);
+    this.plotScatter(scatterPlotData);
   }
 
   initTable() {
@@ -198,58 +210,26 @@ export default class LatencyView extends View {
       .text('Latency (ms)');
 
     this.graph.g.maxY = 0;
-    this.graph.g.set = 0;
     this.graph.g.data = [];
   }
 
-  plotBarChart(data, title) {
-    if (this.graph.g.set === 1) {
-      this.graph.g.x.domain(data.map(d => d.name));
+  plotBarChart(dataSets) {
+    // First, we aggregate the data to get the maximum possible value.
+    dataSets.forEach((data, index) => {
+      this.graph.g.data = this.graph.g.data.concat(data.data);
 
-      // Captions for the different statistic functions plotted.
-      var caption = this.graph.g.chart.append('g')
-        .attr('class', 'caption')
-        .attr('transform', `translate(${this.graph.g.margin.right},0)`);
+      data.data.forEach(item => {
+        item.name += ` ${index} `;
+      });
 
-      var legend = caption.selectAll('.legend')
-        .data(data)
-        .enter().append('g')
-        .attr('class', 'legend')
-        .attr('transform', (d, i) => `translate(0,${(i * 20)})`);
-
-      legend.append('rect')
-        .attr('x', this.graph.g.width - 18)
-        .attr('width', 18)
-        .attr('height', 18)
-        .style('fill', d => this.graph.g.color(d.name));
-
-      legend.append('text')
-        .attr('x', this.graph.g.width - 24)
-        .attr('y', 9)
-        .attr('dy', '.35em')
-        .style('text-anchor', 'end')
-        .text(d => d.name);
-    }
-
-    data.forEach(item => {
-      item.name += ` ${this.graph.g.set} `;
+      // Caption for each measured set.
+      this.graph.g.xAxisEl
+        .append('text')
+        .attr('transform', `translate(${(index * this.graph.g.width / 3)},12)`)
+        .attr('y', 6)
+        .attr('dy', '.71em')
+        .text(` ${data.title} `);
     });
-
-    this.graph.g.data = this.graph.g.data.concat(data);
-
-    // Caption for each measured set.
-    this.graph.g.xAxisEl
-      .append('text')
-      .attr('transform', `translate(${(this.graph.g.set * this.graph.g.width / 3)},12)`)
-      .attr('y', 6)
-      .attr('dy', '.71em')
-      .text(` ${title} `);
-
-    this.graph.g.set++;
-
-    if (this.graph.g.set < 3) {
-      return;
-    }
 
     this.graph.g.maxY = d3.max(this.graph.g.data, d => d.value);
 
@@ -271,6 +251,30 @@ export default class LatencyView extends View {
       .attr('height', d => this.graph.g.height - this.graph.g.y(d.value))
       .attr('width', this.graph.g.x.rangeBand())
       .style('fill', d => this.graph.g.color(d.name.split(' ')[0]));
+
+    // Captions for the different statistic functions plotted.
+    var caption = this.graph.g.chart.append('g')
+      .attr('class', 'caption')
+      .attr('transform', `translate(${this.graph.g.margin.right},0)`);
+
+    var legend = caption.selectAll('.legend')
+      .data(dataSets[0].data)
+      .enter().append('g')
+      .attr('class', 'legend')
+      .attr('transform', (d, i) => `translate(0,${(i * 20)})`);
+
+    legend.append('rect')
+      .attr('x', this.graph.g.width - 18)
+      .attr('width', 18)
+      .attr('height', 18)
+      .style('fill', d => this.graph.g.color(d.name.split(' ')[0]));
+
+    legend.append('text')
+      .attr('x', this.graph.g.width - 24)
+      .attr('y', 9)
+      .attr('dy', '.35em')
+      .style('text-anchor', 'end')
+      .text(d => d.name.split(' ')[0]);
   }
 
   initScatterPlot() {
@@ -329,18 +333,14 @@ export default class LatencyView extends View {
       .text('Latency (ms)');
 
     this.graph.s.maxY = 0;
-    this.graph.s.set = 0;
     this.graph.s.data = [];
   }
 
-  plotScatter(data) {
-    this.graph.s.data = this.graph.s.data.concat(data);
-
-    this.graph.s.set++;
-
-    if (this.graph.s.set < 3) {
-      return;
-    }
+  plotScatter(dataSets) {
+    // First, we aggregate the data to get the maximum possible values.
+    dataSets.forEach(data => {
+      this.graph.s.data = this.graph.s.data.concat(data.data);
+    });
 
     this.graph.s.maxY = d3.max(this.graph.s.data, d => d.value);
 
@@ -349,6 +349,7 @@ export default class LatencyView extends View {
     this.graph.s.xAxisEl.call(this.graph.s.xAxis);
     this.graph.s.yAxisEl.call(this.graph.s.yAxis);
 
+    // Let's plot the dots...
     this.graph.s.chart.selectAll('.dot')
       .data(this.graph.s.data)
       .enter().append('circle')
@@ -358,6 +359,19 @@ export default class LatencyView extends View {
       .attr('cy', d => this.graph.s.y(d.value))
       .style('fill', d => this.graph.s.color(d.name));
 
+    // Now that the X axis is final, we can display the mean value lines.
+    dataSets.forEach(data => {
+      this.graph.s.chart.append('line')
+        .attr('class', 'mean')
+        .attr('x1', this.graph.s.x(0))
+        .attr('y1', this.graph.s.y(data.roundtripMean))
+        .attr('x2', this.graph.s.x(ITERATIONS))
+        .attr('y2', this.graph.s.y(data.roundtripMean))
+        .style('stroke-width', 2)
+        .style('stroke', this.graph.s.color(data.data[0].name));
+    });
+
+    // Legend
     var legend = this.graph.s.chart.selectAll('.legend')
       .data(this.graph.s.color.domain())
       .enter().append('g')
