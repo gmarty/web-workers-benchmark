@@ -67,6 +67,7 @@ export default class MessageController extends Controller {
 
   startMeasuring() {
     this.view.initTable();
+    this.view.initBarChart();
     this.view.initScatterPlot();
 
     var dataSets = [];

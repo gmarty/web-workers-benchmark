@@ -15,6 +15,7 @@ var template = `
   </gaia-header>
   <div id="table"></div>
   <div id="barchart"></div>
+  <p class="fine-prints">Lower is better.</p>
   <div id="scatterplot"></div>
   `;
 

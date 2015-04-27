@@ -8,6 +8,7 @@ import 'components/regression-js/build/regression.min';
 import 'components/node-isnumber/index';
 import 'components/node-stats-lite/stats';
 
+const ITERATIONS = 100;
 const SIZE_UNIT = 1024; // 1 B
 
 var template = `
@@ -16,6 +17,8 @@ var template = `
     <button id="reload" data-icon="reload"></button>
   </gaia-header>
   <div id="table"></div>
+  <div id="barchart"></div>
+  <p class="fine-prints">Higher is better.</p>
   <div id="scatterplot"></div>
   `;
 
@@ -38,6 +41,7 @@ export default class MessageView extends View {
     this.elements = {
       header: this.$('gaia-header'),
       table: this.$('#table'),
+      barchart: this.$('#barchart'),
       scatterplot: this.$('#scatterplot')
     };
 
@@ -55,6 +59,9 @@ export default class MessageView extends View {
   }
 
   processData(dataSets) {
+    var barChartData = [];
+    var scatterPlotData = [];
+
     dataSets.forEach(dataSet => {
       dataSet.values.shift(); // Remove the first measure.
 
@@ -66,6 +73,9 @@ export default class MessageView extends View {
       var downloadVal = values.map(value => value[3] / value[1] / SIZE_UNIT);
       var roundtripVal = values.map(value => value[3] / value[2] / SIZE_UNIT);
       var roundtripCorrectedVal = values.map(value => value[3] / value[2]);
+
+      var { equation } = regression('linear',
+        values.map(value => [value[3], value[2]]));
 
       var uploadMean = mean(uploadVal);
       var downloadMean = mean(downloadVal);
@@ -133,14 +143,30 @@ export default class MessageView extends View {
       container.innerHTML = tpl;
       this.elements.table.appendChild(container);
 
-      this.plotScatter(values.map(value => {
-        return {
-          name: shortTitle,
-          value: value[2],
-          size: value[3]
-        };
-      }));
+      barChartData.push({
+        data: [
+          {name: 'x', value: roundtripMean},
+          {name: 'M', value: roundtripMedian},
+          {name: '90%', value: roundtrip90Percentile},
+          {name: '95%', value: roundtrip95Percentile}
+        ],
+        title: shortTitle
+      });
+
+      scatterPlotData.push({
+        data: values.map(value => {
+          return {
+            name: shortTitle,
+            value: value[2],
+            size: value[3]
+          };
+        }),
+        regression: equation
+      });
     });
+
+    this.plotBarChart(barChartData);
+    this.plotScatter(scatterPlotData);
   }
 
   humanizeSize(bytes = 0) {
@@ -155,6 +181,122 @@ export default class MessageView extends View {
   }
 
   // Graph related methods.
+  initBarChart() {
+    this.elements.barchart.innerHTML = '';
+
+    this.graph.g = {};
+    this.graph.g.margin = {top: 5, right: 45, bottom: 30, left: 30};
+    this.graph.g.width = 320 - this.graph.g.margin.left - this.graph.g.margin.right;
+    this.graph.g.height = 240 - this.graph.g.margin.top - this.graph.g.margin.bottom;
+
+    this.graph.g.x = d3.scale.ordinal()
+      .rangeRoundBands([0, this.graph.g.width], 0.1);
+
+    this.graph.g.y = d3.scale.linear()
+      .domain([0, this.graph.g.maxY])
+      .range([this.graph.g.height, 0]);
+
+    this.graph.g.xAxis = d3.svg.axis()
+      .scale(this.graph.g.x)
+      .orient('bottom')
+      .tickFormat(d => d.split(' ')[0]);
+
+    this.graph.g.yAxis = d3.svg.axis()
+      .scale(this.graph.g.y)
+      .orient('left');
+
+    this.graph.g.color = d3.scale.category10();
+
+    this.graph.g.chart = d3.select(this.elements.barchart).append('svg')
+      .attr('width', this.graph.g.width + this.graph.g.margin.left + this.graph.g.margin.right)
+      .attr('height', this.graph.g.height + this.graph.g.margin.top + this.graph.g.margin.bottom).append('g')
+      .attr('transform', `translate(${this.graph.g.margin.left},${this.graph.g.margin.top})`)
+      .style('font-size', '12px')
+      .style('font-family', 'Arial');
+
+    this.graph.g.xAxisEl = this.graph.g.chart.append('g')
+      .attr('class', 'x axis')
+      .attr('transform', `translate(0,${this.graph.g.height})`);
+
+    this.graph.g.yAxisEl = this.graph.g.chart.append('g')
+      .attr('class', 'y axis');
+
+    this.graph.g.yAxisEl
+      .append('text')
+      .attr('transform', 'rotate(-90)')
+      .attr('y', 6)
+      .attr('dy', '.71em')
+      .style('text-anchor', 'end')
+      .text('Latency (ms)');
+
+    this.graph.g.maxY = 0;
+    this.graph.g.data = [];
+  }
+
+  plotBarChart(dataSets) {
+    // First, we aggregate the data to get the maximum possible value.
+    dataSets.forEach((data, index) => {
+      this.graph.g.data = this.graph.g.data.concat(data.data);
+
+      data.data.forEach(item => {
+        item.name += ` ${index} `;
+      });
+
+      // Caption for each measured set.
+      this.graph.g.xAxisEl
+        .append('text')
+        .attr('transform', `translate(${(index * this.graph.g.width / 3)},12)`)
+        .attr('y', 6)
+        .attr('dy', '.71em')
+        .text(` ${data.title} `);
+    });
+
+    this.graph.g.maxY = d3.max(this.graph.g.data, d => d.value);
+
+    this.graph.g.x.domain(this.graph.g.data.map(d => d.name));
+    this.graph.g.y.domain([0, this.graph.g.maxY]);
+
+    this.graph.g.xAxisEl
+      .append('g')
+      .style('font-size', '8px')
+      .call(this.graph.g.xAxis);
+    this.graph.g.yAxisEl.call(this.graph.g.yAxis);
+
+    this.graph.g.chart.selectAll('.bar')
+      .data(this.graph.g.data)
+      .enter().append('rect')
+      .attr('class', 'bar')
+      .attr('x', d => this.graph.g.x(d.name))
+      .attr('y', d => this.graph.g.y(d.value))
+      .attr('height', d => this.graph.g.height - this.graph.g.y(d.value))
+      .attr('width', this.graph.g.x.rangeBand())
+      .style('fill', d => this.graph.g.color(d.name.split(' ')[0]));
+
+    // Captions for the different statistic functions plotted.
+    var caption = this.graph.g.chart.append('g')
+      .attr('class', 'caption')
+      .attr('transform', `translate(${this.graph.g.margin.right},0)`);
+
+    var legend = caption.selectAll('.legend')
+      .data(dataSets[0].data)
+      .enter().append('g')
+      .attr('class', 'legend')
+      .attr('transform', (d, i) => `translate(0,${(i * 20)})`);
+
+    legend.append('rect')
+      .attr('x', this.graph.g.width - 18)
+      .attr('width', 18)
+      .attr('height', 18)
+      .style('fill', d => this.graph.g.color(d.name.split(' ')[0]));
+
+    legend.append('text')
+      .attr('x', this.graph.g.width - 24)
+      .attr('y', 9)
+      .attr('dy', '.35em')
+      .style('text-anchor', 'end')
+      .text(d => d.name.split(' ')[0]);
+  }
+
   initScatterPlot() {
     this.elements.scatterplot.innerHTML = '';
 
@@ -164,7 +306,7 @@ export default class MessageView extends View {
     this.graph.s.height = 240 - this.graph.s.margin.top - this.graph.s.margin.bottom;
 
     this.graph.s.x = d3.scale.linear()
-      .domain([0, 1])
+      .domain([0, ITERATIONS])
       .range([0, this.graph.s.width]);
 
     this.graph.s.y = d3.scale.linear()
@@ -212,14 +354,14 @@ export default class MessageView extends View {
       .text('Latency (ms)');
 
     this.graph.s.maxY = 0;
-    this.graph.s.set = 0;
     this.graph.s.data = [];
   }
 
-  plotScatter(data) {
-    this.graph.s.data = this.graph.s.data.concat(data);
-
-    this.graph.s.set++;
+  plotScatter(dataSets) {
+    // First, we aggregate the data to get the maximum possible values.
+    dataSets.forEach(data => {
+      this.graph.s.data = this.graph.s.data.concat(data.data);
+    });
 
     this.graph.s.maxX = d3.max(this.graph.s.data, d => d.size);
     this.graph.s.maxY = d3.max(this.graph.s.data, d => d.value);
@@ -230,6 +372,7 @@ export default class MessageView extends View {
     this.graph.s.xAxisEl.call(this.graph.s.xAxis);
     this.graph.s.yAxisEl.call(this.graph.s.yAxis);
 
+    // Let's plot the dots...
     this.graph.s.chart.selectAll('.dot')
       .data(this.graph.s.data)
       .enter().append('circle')
@@ -239,21 +382,17 @@ export default class MessageView extends View {
       .attr('cy', d => this.graph.s.y(d.value))
       .style('fill', d => this.graph.s.color(d.name));
 
-    // Regression line
-    var { equation } = regression('linear', data.map(d => [d.size, d.value]));
-
-    this.graph.s.chart.append('line')
-      .attr('class', 'regression')
-      .attr('x1', this.graph.s.x(0))
-      .attr('y1', this.graph.s.y(equation[1]))
-      .attr('x2', this.graph.s.x(this.graph.s.maxX))
-      .attr('y2', this.graph.s.y((this.graph.s.maxX * equation[0]) + equation[1]))
-      .style('stroke-width', 2)
-      .style('stroke', this.graph.s.color(data[0].name));
-
-    if (this.graph.s.set < 3) {
-      return;
-    }
+    // Now that the X axis is final, we can display the regression lines.
+    dataSets.forEach(data => {
+      this.graph.s.chart.append('line')
+        .attr('class', 'regression')
+        .attr('x1', this.graph.s.x(0))
+        .attr('y1', this.graph.s.y(data.regression[1]))
+        .attr('x2', this.graph.s.x(this.graph.s.maxX))
+        .attr('y2', this.graph.s.y((this.graph.s.maxX * data.regression[0]) + data.regression[1]))
+        .style('stroke-width', 2)
+        .style('stroke', this.graph.s.color(data.data[0].name));
+    });
 
     // Legend
     var legend = this.graph.s.chart.selectAll('.legend')
