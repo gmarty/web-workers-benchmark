@@ -66,6 +66,8 @@ export default class MessageController extends Controller {
   }
 
   startMeasuring() {
+    this.view.setLoader(true);
+
     this.view.initTable();
     this.view.initBarChart();
     this.view.initScatterPlot();
@@ -84,6 +86,7 @@ export default class MessageController extends Controller {
       .then((dataSet) => {
         dataSets.push(dataSet);
         this.view.processData(dataSets);
+        this.view.setLoader(false);
       })
       .catch(error => {
         console.log(error);

@@ -9,14 +9,16 @@ import 'components/node-stats-lite/stats';
 const ITERATIONS = 100;
 
 var template = `
-  <gaia-header action="back">
-    <h1>Latency of Web workers</h1>
-    <button id="reload" data-icon="reload"></button>
-  </gaia-header>
-  <div id="table"></div>
-  <div id="barchart"></div>
-  <p class="fine-prints">Lower is better.</p>
-  <div id="scatterplot"></div>
+  <div class="results">
+    <gaia-header action="back">
+      <h1>Latency of Web workers</h1>
+      <button id="reload" data-icon="reload"></button>
+    </gaia-header>
+    <div id="table"></div>
+    <div id="barchart"></div>
+    <p class="fine-prints">Lower is better.</p>
+    <div id="scatterplot"></div>
+  </div>
   `;
 
 export default class LatencyView extends View {
@@ -53,6 +55,10 @@ export default class LatencyView extends View {
 
   setActive(active) {
     this.el.classList.toggle('active', active);
+  }
+
+  setLoader(loading = false) {
+    this.el.classList.toggle('loading', loading);
   }
 
   processData(dataSets) {

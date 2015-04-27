@@ -12,6 +12,8 @@ body {
   margin: 0;
   padding: 0;
   font: normal 1.2rem/2.4rem FiraSans;
+  overflow-x: hidden;
+  overflow-y: scroll;
 }
 
 body > section {
@@ -28,6 +30,43 @@ body > section {
 body > section.active {
   pointer-events: auto;
   opacity: 1;
+}
+
+body > section.loading {
+  background: url(../img/icon.svg) no-repeat center center / 50vmin;
+  animation: 3s throbber steps(2, end) infinite;
+  pointer-events: none;
+}
+
+@keyframes throbber {
+  0% {
+    transform: translateX(-10vmin);
+    opacity: 1;
+  }
+
+  25% {
+    transform: translateX(0vmin);
+    opacity: .5;
+  }
+
+  50% {
+    transform: translateX(10vmin);
+    opacity: 1;
+  }
+
+  75% {
+    transform: translateX(0vmin);
+    opacity: .5;
+  }
+
+  100% {
+    transform: translateX(-10vmin);
+    opacity: 1;
+  }
+}
+
+body > section.loading .results {
+  display: none;
 }
 
 h1, h2 {
