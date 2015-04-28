@@ -4,6 +4,7 @@
   "version": "0.0.1",
   "description": "Benchmark various aspects of Web workers",
   "launch_path": "/index.html",
+  "orientation": "portrait",
   "icons": {
     "16": "/img/icons/16.png",
     "32": "/img/icons/32.png",
