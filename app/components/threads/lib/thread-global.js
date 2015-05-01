@@ -1,8 +1,10 @@
+'use strict';
 
 /**
  * Dependencies
  */
 
+var Messenger = require('./messenger');
 var emitter = require('./emitter');
 var utils = require('./utils');
 
@@ -13,7 +15,8 @@ var utils = require('./utils');
 var debug = 0 ? console.log.bind(console, '[ThreadGlobal]') : function() {};
 
 const ERRORS = {
-  1: 'Unknown connection type'
+  1: 'Unknown connection type',
+  2: 'Service already defined'
 };
 
 /**
@@ -22,23 +25,38 @@ const ERRORS = {
 
 ThreadGlobal.prototype = Object.create(emitter.prototype);
 
+/**
+ * Initialize a new `ThreadGlobal`
+ *
+ * @private
+ */
 function ThreadGlobal() {
   this.id = getThreadId();
   this.type = utils.env();
+  this.isRoot = isRoot();
   this.manager = new BroadcastChannel('threadsmanager');
   this.ports = [];
+  this.services = {};
   this.connections = {
     inbound: 0,
     outbound: 0
   };
 
-  this.messages = new utils.Messages(this, this.id);
+  this.messenger = new Messenger(this.id, '[thread-global]')
+    .handle('ping', this.onPing, this);
+
   this.onmessage = this.onmessage.bind(this);
   this.listen();
+  this.ready();
 
-  debug('initialized', this.type);
+  debug('initialized', this.id, this.type, this.isRoot);
 }
 
+/**
+ * Listens for incoming messages.
+ *
+ * @private
+ */
 ThreadGlobal.prototype.listen = function() {
   debug('listen');
   switch (this.type) {
@@ -57,19 +75,88 @@ ThreadGlobal.prototype.listen = function() {
   }
 };
 
+/**
+ * Ping the outside world to let them
+ * know the thread is ready.
+ *
+ * @private
+ */
+ThreadGlobal.prototype.ready = function() {
+  debug('ready', this.id);
+  this.messenger.push(this, {
+    type: 'threadready',
+    data: this.serialize()
+  });
+};
+
+/**
+ * Respond when the outside world asks
+ * if we're ready.
+ *
+ * TODO: This callback may not be required.
+ *
+ * @private
+ */
+ThreadGlobal.prototype.onPing = function(request) {
+  debug('on ping');
+  request.respond(this.serialize());
+};
+
+ThreadGlobal.prototype.serialize = function() {
+  return {
+    id: this.id,
+    services: this.services
+  };
+};
+
+/**
+ * When a message is sent to this thread
+ * we re-emit the message internally.
+ *
+ * The thread-global abstracts away the
+ * the complexity of message listening
+ * so that `Service` can just do:
+ *
+ *   thread.on('message', ...);
+ *
+ * and not care what thread type
+ * it's running in.
+ *
+ * @param  {Event} e
+ * @private
+ */
 ThreadGlobal.prototype.onmessage = function(e) {
   debug('on message', e);
+  this.messenger.parse(e);
   this.emit('message', e);
 };
 
-ThreadGlobal.prototype.broadcast = function(type, data) {
-  this.postMessage(this.messages.create('broadcast', {
-    recipient: this.id, // ChildThread ID
-    data: {
-      type: type,
-      data: data
-    }
-  }));
+/**
+ * Keeps a record of what services are
+ * running inside this thread.
+ *
+ * This makes the assumption that
+ *
+ * TODO: If services are destroyed we
+ * should remove it from this list.
+ *
+ * @param  {Service} service
+ */
+ThreadGlobal.prototype.serviceReady = function(service) {
+  debug('service ready', service);
+  if (this.services[service.name]) {
+    throw new Error('Service "' + service.name + '" already defined');
+  }
+
+  this.services[service.name] = {
+    id: service.id,
+    name: service.name
+  };
+
+  this.messenger.push(this, {
+    type: 'serviceready',
+    data: this.services[service.name]
+  });
 };
 
 /**
@@ -92,13 +179,18 @@ ThreadGlobal.prototype.postMessage = function(message) {
     case 'worker':
       postMessage(message); break;
     case 'sharedworker':
-      this.ports.map(function(port) { return port.postMessage(message); });
+      this.ports.forEach(function(port) { port.postMessage(message); });
       break;
     case 'window':
       window.parent.postMessage(message, '*'); break;
   }
 };
 
+/**
+ * Increment the connection count.
+ *
+ * @param  {String} type  ['incoming','outgoing']
+ */
 ThreadGlobal.prototype.connection = function(type) {
   if (!(type in this.connections)) throw Error(ERRORS[1]);
   this.connections[type]++;
@@ -106,6 +198,11 @@ ThreadGlobal.prototype.connection = function(type) {
   this.check();
 };
 
+/**
+ * Decrement the connection count.
+ *
+ * @param  {String} type  ['incoming','outgoing']
+ */
 ThreadGlobal.prototype.disconnection = function(type) {
   if (!(type in this.connections)) throw Error(ERRORS[1]);
   this.connections[type]--;
@@ -113,22 +210,37 @@ ThreadGlobal.prototype.disconnection = function(type) {
   this.check();
 };
 
+/**
+ * Checks to see if the thread is
+ * 'redundant', broadcasting an event
+ * to notify the outside world if so.
+ *
+ * @private
+ */
 ThreadGlobal.prototype.check = function() {
-  if (this.redundant()) {
+  if (this.isRedundant()) {
     debug('redundant');
-    this.broadcast('redundant');
+    this.messenger.push(this, { type: 'redundant' });
   }
 };
 
-ThreadGlobal.prototype.isRoot = function() {
-  return this.id === 'root';
+/**
+ * A thread is 'redundant' when it has
+ * no clients and it's not a 'root'.
+ *
+ * @return {Boolean}
+ */
+ThreadGlobal.prototype.isRedundant = function() {
+  return !this.isRoot && this.isDetached();
 };
 
-ThreadGlobal.prototype.redundant = function() {
-  return !this.isRoot() && this.detached();
-};
-
-ThreadGlobal.prototype.detached = function() {
+/**
+ * A thread is 'detached' when
+ * it has no clients.
+ *
+ * @return {Boolean} [description]
+ */
+ThreadGlobal.prototype.isDetached = function() {
   return !this.connections.inbound;
 };
 
@@ -138,8 +250,16 @@ ThreadGlobal.prototype.detached = function() {
 
 function getThreadId() {
   return utils.query(location.search).pid
-    || (typeof window != 'undefined' && window.name)
-    || 'root';
+    || (inWindow() && window.name)
+    || utils.uuid();
+}
+
+function isRoot() {
+  return inWindow() && window.parent === window;
+}
+
+function inWindow() {
+  return typeof window !== 'undefined';
 }
 
 /**

@@ -596,7 +596,7 @@ module.exports = component.register('gaia-header', {
         if (action === this._action) { return; }
         this.setAttr('action', action);
         this._action = action;
-      },
+      }
     },
 
     titleStart: {

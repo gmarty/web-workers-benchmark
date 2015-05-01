@@ -6,7 +6,7 @@
  */
 
 var ChildThread = require('./child-thread');
-var utils = require('./utils');
+var Messenger = require('./messenger');
 
 /**
  * Exports
@@ -15,11 +15,19 @@ var utils = require('./utils');
 module.exports = Manager;
 
 /**
- * Locals
+ * Simple logger
+ *
+ * @type {Function}
  */
-
 var debug = 0 ? console.log.bind(console, '[Manager]') : function() {};
+
+/**
+ * Global 'manager' channel
+ *
+ * @type {BroadcastChannel}
+ */
 var channel = new BroadcastChannel('threadsmanager');
+
 
 function Manager(descriptors) {
   if (!(this instanceof Manager)) return new Manager(descriptors);
@@ -34,8 +42,10 @@ function ManagerInternal(descriptors) {
   this.activeServices = {};
   this.registry = {};
 
-  this.messages = new utils.Messages(this, this.id, ['connect']);
-  channel.addEventListener('message', this.messages.handle);
+  this.messenger = new Messenger(this.id, 'manager')
+    .handle('connect', this.onconnect, this);
+
+  channel.addEventListener('message', this.messenger.parse);
 
   this.register(descriptors);
   debug('intialized');
@@ -64,33 +74,36 @@ ManagerInternal.prototype.onbroadcast = function(broadcast) {
  * @param  {Object} data {service,client,contract}
  * @private
  */
-ManagerInternal.prototype.onconnect = function(data) {
-  debug('on connect', data);
+ManagerInternal.prototype.onconnect = function(request) {
+  debug('on connect', request);
+  var data = request.data;
   var descriptor = this.registry[data.service];
 
   if (!descriptor) return debug('"%s" not managed here', data.service);
 
-  var contract = descriptor.contract;
+  var self = this;
   var client = data.client;
+  var contract = descriptor.contract;
+  var thread = this.getThread(descriptor);
 
-  this.getThread(descriptor)
-    .getService(descriptor.name)
-    .then(function(service) {
-      return this.connect(service, client, contract);
-    }.bind(this))
-    .catch(function(e) { throw new Error(e); });
+  request.respond(
+    thread.getService(descriptor.name)
+      .then(function(service) {
+        return self.connect(service, client, contract); })
+      .catch(function(e) { throw new Error(e); }));
 };
 
 ManagerInternal.prototype.connect = function(service, client, contract) {
   debug('connect', service, client, contract);
-  channel.postMessage(this.messages.create('connect', {
+  return this.messenger.request(channel, {
+    type: 'connect',
     recipient: service.id,
     data: {
       client: client,
       service: service.name,
       contract: contract
     }
-  }));
+  });
 };
 
 ManagerInternal.prototype.onclientdisconnected = function(msg) {
@@ -103,8 +116,8 @@ ManagerInternal.prototype.onclientconnected = function(msg) {
 
 ManagerInternal.prototype.getThread = function(descriptor) {
   debug('get thread', descriptor, this.processes);
-  var process = this.processes.src[descriptor.src];
-  return process || this.createThread(descriptor);
+  var thread = this.processes.src[descriptor.src];
+  return thread || this.createThread(descriptor);
 };
 
 ManagerInternal.prototype.createThread = function(descriptor) {

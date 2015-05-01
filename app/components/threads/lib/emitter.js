@@ -1,9 +1,16 @@
+'use strict';
 
 /**
  * Exports
  */
 
 module.exports = Emitter;
+
+/**
+ * Simple logger
+ *
+ * @type {Function}
+ */
 
 var debug = 0 ? console.log.bind(console, '[emitter]') : function(){};
 

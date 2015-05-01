@@ -20,6 +20,5 @@
   },
   "_source": "git://github.com/Tom-Alexander/regression-js.git",
   "_target": "~1.2.0",
-  "_originalSource": "regression-js",
-  "_direct": true
+  "_originalSource": "regression-js"
 }

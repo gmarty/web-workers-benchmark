@@ -76,15 +76,24 @@ export default class LatencyController extends Controller {
 
     this.measureLatencyOfWebWorkersWithPostMessage()
       .then((dataSet) => {
-        dataSets.push(dataSet);
+        if (dataSet) {
+          dataSets.push(dataSet);
+        }
+
         return this.measureLatencyOfWebWorkersWithBroadcastChannel();
       })
       .then((dataSet) => {
-        dataSets.push(dataSet);
+        if (dataSet) {
+          dataSets.push(dataSet);
+        }
+
         return this.measureLatencyOfThreads();
       })
       .then((dataSet) => {
-        dataSets.push(dataSet);
+        if (dataSet) {
+          dataSets.push(dataSet);
+        }
+
         this.view.processData(dataSets);
         this.view.setLoader(false);
       })
@@ -94,9 +103,11 @@ export default class LatencyController extends Controller {
   }
 
   measureLatencyOfThreads() {
-    return new Promise((resolve, reject) => {
+    return new Promise(resolve => {
       if (!BROADCAST_CHANNEL_SUPPORT) {
-        reject('The BroadcastChannel API is not supported.');
+        console.error('The BroadcastChannel API is not supported.');
+        resolve(null);
+        return;
       }
 
       var dataSet = [];
@@ -105,7 +116,7 @@ export default class LatencyController extends Controller {
         var highResolutionBefore = window.performance.now();
 
         this.client
-          .call('ping', now)
+          .method('ping', now)
           .then(timestamps => {
             var now = Date.now();
             var highResolutionAfter = window.performance.now();
@@ -134,7 +145,7 @@ export default class LatencyController extends Controller {
   }
 
   measureLatencyOfWebWorkersWithPostMessage() {
-    return new Promise((resolve) => {
+    return new Promise(resolve => {
       var dataSet = [];
       var benchmark = () => {
         var now = Date.now();
@@ -170,9 +181,11 @@ export default class LatencyController extends Controller {
   }
 
   measureLatencyOfWebWorkersWithBroadcastChannel() {
-    return new Promise((resolve, reject) => {
+    return new Promise(resolve => {
       if (!BROADCAST_CHANNEL_SUPPORT) {
-        reject('The BroadcastChannel API is not supported.');
+        console.error('The BroadcastChannel API is not supported.');
+        resolve(null);
+        return;
       }
 
       var dataSet = [];

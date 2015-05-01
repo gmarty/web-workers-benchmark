@@ -1,6 +1,6 @@
 /* global threads */
 
-/* Benchmark the impact of message size on Web workers latency. */
+/* Benchmark the transfer speed of Web workers. */
 
 import { Controller } from 'components/fxos-mvc/dist/mvc';
 
@@ -76,15 +76,24 @@ export default class MessageController extends Controller {
 
     this.benchmarkWebWorkersWithPostMessage()
       .then((dataSet) => {
-        dataSets.push(dataSet);
+        if (dataSet) {
+          dataSets.push(dataSet);
+        }
+
         return this.benchmarkWebWorkersWithBroadcastChannel();
       })
       .then((dataSet) => {
-        dataSets.push(dataSet);
+        if (dataSet) {
+          dataSets.push(dataSet);
+        }
+
         return this.benchmarkThreads();
       })
       .then((dataSet) => {
-        dataSets.push(dataSet);
+        if (dataSet) {
+          dataSets.push(dataSet);
+        }
+
         this.view.processData(dataSets);
         this.view.setLoader(false);
       })
@@ -96,9 +105,11 @@ export default class MessageController extends Controller {
   benchmarkThreads() {
     var size = 0;
 
-    return new Promise((resolve, reject) => {
+    return new Promise(resolve => {
       if (!BROADCAST_CHANNEL_SUPPORT) {
-        reject('The BroadcastChannel API is not supported.');
+        console.error('The BroadcastChannel API is not supported.');
+        resolve(null);
+        return;
       }
 
       var dataSet = [];
@@ -108,7 +119,7 @@ export default class MessageController extends Controller {
         var highResolutionBefore = window.performance.now();
 
         this.client
-          .call('ping', {
+          .method('ping', {
             m: obj,
             t: now,
             s: size
@@ -148,7 +159,7 @@ export default class MessageController extends Controller {
   benchmarkWebWorkersWithPostMessage() {
     var size = 0;
 
-    return new Promise((resolve) => {
+    return new Promise(resolve => {
       var dataSet = [];
       var benchmark = () => {
         var obj = this.getObject(size);
@@ -195,9 +206,11 @@ export default class MessageController extends Controller {
   benchmarkWebWorkersWithBroadcastChannel() {
     var size = 0;
 
-    return new Promise((resolve, reject) => {
+    return new Promise(resolve => {
       if (!BROADCAST_CHANNEL_SUPPORT) {
-        reject('The BroadcastChannel API is not supported.');
+        console.error('The BroadcastChannel API is not supported.');
+        resolve(null);
+        return;
       }
 
       var dataSet = [];

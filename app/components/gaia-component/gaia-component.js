@@ -1,11 +1,12 @@
-;(function(define){define(function(require,exports,module){
-'use strict';
-
+/* jshint node:true */
+/* globals define */
+;(function(define){'use strict';define(function(require,exports,module){
 /**
  * Locals
  */
 
-var textContent = Object.getOwnPropertyDescriptor(Node.prototype, 'textContent');
+var textContent = Object.getOwnPropertyDescriptor(Node.prototype,
+    'textContent');
 var innerHTML = Object.getOwnPropertyDescriptor(Element.prototype, 'innerHTML');
 var removeAttribute = Element.prototype.removeAttribute;
 var setAttribute = Element.prototype.setAttribute;
@@ -44,7 +45,7 @@ exports.register = function(name, props) {
 
   // Merge base getter/setter attributes with the user's,
   // then define the property descriptors on the prototype.
-  var descriptors = Object.assign(props.attrs || {}, base.descriptors);
+  var descriptors = mixin(props.attrs || {}, base.descriptors);
 
   // Store the orginal descriptors somewhere
   // a little more private and delete the original
@@ -159,7 +160,9 @@ var base = {
         if (this.lightStyle) { this.appendChild(this.lightStyle); }
       },
 
-      get: textContent.get
+      get: function() {
+        return textContent.get();
+      }
     },
 
     innerHTML: {
@@ -192,9 +195,8 @@ var defaultPrototype = createProto(HTMLElement.prototype, base.properties);
 function getBaseProto(proto) {
   if (!proto) { return defaultPrototype; }
   proto = proto.prototype || proto;
-  return !proto.GaiaComponent
-    ? createProto(proto, base.properties)
-    : proto;
+  return !proto.GaiaComponent ?
+    createProto(proto, base.properties) : proto;
 }
 
 /**
@@ -206,7 +208,7 @@ function getBaseProto(proto) {
  * @return {Object}
  */
 function createProto(proto, props) {
-  return Object.assign(Object.create(proto), props);
+  return mixin(Object.create(proto), props);
 }
 
 /**
@@ -284,11 +286,11 @@ function processCss(template, name) {
  * @param  {String} css
  */
 function injectGlobalCss(css) {
-  if (!css) return;
+  if (!css) {return;}
   var style = document.createElement('style');
   style.innerHTML = css.trim();
-  headReady().then(() => {
-    document.head.appendChild(style)
+  headReady().then(function() {
+    document.head.appendChild(style);
   });
 }
 
@@ -299,7 +301,7 @@ function injectGlobalCss(css) {
  * @private
  */
 function headReady() {
-  return new Promise(resolve => {
+  return new Promise(function(resolve) {
     if (document.head) { return resolve(); }
     window.addEventListener('load', function fn() {
       window.removeEventListener('load', fn);
@@ -377,6 +379,22 @@ function addDirObserver() {
   function onChanged(mutations) {
     document.dispatchEvent(new Event('dirchanged'));
   }
+}
+
+/**
+ * Copy the values of all properties from
+ * source object `target` to a target object `source`.
+ * It will return the target object.
+ *
+ * @param   {Object} target
+ * @param   {Object} source
+ * @returns {Object}
+ */
+function mixin(target, source) {
+  for (var key in source) {
+    target[key] = source[key];
+  }
+  return target;
 }
 
 });})(typeof define=='function'&&define.amd?define

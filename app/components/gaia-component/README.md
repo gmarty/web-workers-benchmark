@@ -1,4 +1,4 @@
-# gaia-component [![](https://travis-ci.org/gaia-components/gaia-component.svg)](https://travis-ci.org/gaia-components/gaia-component)
+# gaia-component [![](https://travis-ci.org/gaia-components/gaia-component.svg)](https://travis-ci.org/gaia-components/gaia-component) [![devDependency Status](https://david-dm.org/gaia-components/gaia-component/dev-status.svg)](https://david-dm.org/gaia-components/gaia-component#info=devDependencies)
 
 A wrapper around `document.registerElement()` to define a custom-element with workarounds for gaps in the Gecko platform, plus some convenience methods.
 

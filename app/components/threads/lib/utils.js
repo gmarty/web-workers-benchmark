@@ -1,11 +1,10 @@
 'use strict';
 
 /**
- * Mini debugger
- * @type {Function}
+ * Create a UUID string.
+ *
+ * @return {String}
  */
-
-var debug = 0 ? console.log.bind(console, '[utils]') : function() {};
 
 exports.uuid = function (){
   var timestamp = Date.now();
@@ -19,6 +18,20 @@ exports.uuid = function (){
   );
 };
 
+/**
+ * Check that the given arguments
+ * match the given types.
+ *
+ * Example:
+ *
+ *   typesMatch([1, 'foo'], ['number', 'string']) //=> true
+ *   typesMatch([1, 'foo'], ['string', 'number']) //=> false
+ *
+ * @param  {Array} args
+ * @param  {Array} types
+ * @return {Boolean}
+ */
+
 exports.typesMatch = function (args, types) {
   for (var i = 0, l = args.length; i < l; i++) {
     if (typeof args[i] !== types[i]) return false;
@@ -26,6 +39,17 @@ exports.typesMatch = function (args, types) {
 
   return true;
 };
+
+/**
+ * Returns a Promise packaged
+ * inside an object.
+ *
+ * This is convenient as we don't
+ * have to have a load of callbacks
+ * directly inside our funciton body.
+ *
+ * @return {Object}
+ */
 
 exports.deferred = function () {
   var deferred = {};
@@ -35,6 +59,19 @@ exports.deferred = function () {
   });
   return deferred;
 };
+
+/**
+ * Parses a url query string and
+ * spits out a key/value object.
+ *
+ * Example:
+ *
+ *   query('?foo=bar').foo; //=> 'bar'
+ *   query('?foo=bar&baz=bat').baz; //=> 'bat'
+ *
+ * @param  {String} string
+ * @return {Object}
+ */
 
 exports.query = function(string) {
   var result = {};
@@ -50,6 +87,13 @@ exports.query = function(string) {
   return result;
 };
 
+/**
+ * Returns type of environment
+ * the current script is running in.
+ *
+ * @return {String}
+ */
+
 exports.env = function() {
   return {
     'Window': 'window',
@@ -57,84 +101,4 @@ exports.env = function() {
     'DedicatedWorkerGlobalScope': 'worker',
     'ServiceWorkerGlobalScope': 'serviceworker'
   }[self.constructor.name] || 'unknown';
-};
-
-exports.message = {
-  factory: function(sender) {
-    return function Message(type, options) {
-      options = options || {};
-      return {
-        type: type,
-        id: exports.uuid(),
-        sender: sender,
-        recipient: options.recipient || '*',
-        data: options.data
-      };
-    };
-  },
-
-  handler: function(uuid, types) {
-    return function(e) {
-      var message = e.data;
-      var recipient = message.recipient;
-      var type = message.type;
-      var authorized = recipient === uuid || recipient === '*';
-      if (!authorized) return;
-      if (!~types.indexOf(type)) return;
-      debug('onmessage', message);
-      if (this['on' + type]) this['on' + type](message.data, e);
-    };
-  }
-};
-
-/**
- * Message
- */
-
-exports.Messages = Messages;
-
-function Messages(context, id, types) {
-  this.context = context;
-  this.id = id;
-  this.types = types || [];
-  this.history = new Array(10);
-  this.handle = this.handle.bind(this);
-}
-
-Messages.prototype.handle = function(e) {
-  var message = e.data;
-  if (!this.handles(message)) return;
-  if (!this.isRecipient(message)) return;
-  if (this.hasRead(message)) return;
-  this.context['on' + message.type](message.data, e);
-  this.read(message);
-};
-
-Messages.prototype.handles = function(message) {
-  return !!~this.types.indexOf(message.type);
-};
-
-Messages.prototype.isRecipient = function(message) {
-  var recipient = message.recipient;
-  return recipient === this.id || recipient === '*';
-};
-
-Messages.prototype.read = function(message) {
-  this.history.push(message.id);
-  this.history.shift();
-};
-
-Messages.prototype.hasRead = function(message) {
-  return !!~this.history.indexOf(message.id);
-};
-
-Messages.prototype.create = function (type, options) {
-  options = options || {};
-  return {
-    type: type,
-    id: exports.uuid(),
-    sender: this.id,
-    recipient: options.recipient || '*',
-    data: options.data
-  };
 };
