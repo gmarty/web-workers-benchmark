@@ -5,14 +5,14 @@ var template = `
     <h1>Web workers benchmark</h1>
   </gaia-header>
 
+  <button class="creation">
+    <h2>Creation time</h2>
+  </button>
   <button class="latency">
     <h2>Latency</h2>
   </button>
   <button class="message">
     <h2>Transfer speed</h2>
-  </button>
-  <button class="creation">
-    <h2>Creation time</h2>
   </button>
   `;
 

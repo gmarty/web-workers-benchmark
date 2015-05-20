@@ -65,19 +65,13 @@ export default class CreationController extends Controller {
   }
 
   benchmarkCreationOfWebWorkers() {
-    var worker = null;
-
     return new Promise(resolve => {
       var dataSet = [];
       var benchmark = () => {
-        if (worker) {
-          worker.terminate();
-        }
-
         var now = Date.now();
         var highResolutionBefore = window.performance.now();
 
-        worker = new Worker('workers/creation-worker.js');
+        var worker = new Worker('workers/creation-worker.js');
 
         worker.postMessage(now);
         worker.onmessage = evt => {
@@ -91,6 +85,7 @@ export default class CreationController extends Controller {
           ];
 
           dataSet.push(data);
+          worker.terminate();
 
           if (dataSet.length <= ITERATIONS) {
             benchmark(dataSet);
