@@ -95,6 +95,12 @@ p {
   margin: 1rem;
 }
 
+iframe {
+  height: 0;
+  width: 0;
+  border: none;
+}
+
 #home > button {
   display: block;
   border: none;

@@ -11,6 +11,9 @@ var template = `
   <button class="message">
     <h2>Transfer speed</h2>
   </button>
+  <button class="creation">
+    <h2>Creation time</h2>
+  </button>
   `;
 
 export default class HomeView extends View {

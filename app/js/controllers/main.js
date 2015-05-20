@@ -3,6 +3,7 @@ import { Controller } from 'components/fxos-mvc/dist/mvc';
 import HomeController from 'js/controllers/home';
 import LatencyController from 'js/controllers/latency';
 import MessageController from 'js/controllers/message';
+import CreationController from 'js/controllers/creation';
 
 export default class MainController extends Controller {
   constructor() {
@@ -17,7 +18,8 @@ export default class MainController extends Controller {
     this.controllers = {
       home: new HomeController(options),
       latency: new LatencyController(options),
-      message: new MessageController(options)
+      message: new MessageController(options),
+      creation: new CreationController(options)
     };
   }
 
