@@ -155,7 +155,7 @@ export default class CreationView extends View {
             id: index
           };
         }),
-        roundtripMean: roundtripMean
+        regression: roundtripMean
       });
     });
 
@@ -232,7 +232,7 @@ export default class CreationView extends View {
       // Caption for each measured set.
       this.graph.g.xAxisEl
         .append('text')
-        .attr('transform', `translate(${(index * this.graph.g.width / 2)},12)`)
+        .attr('transform', `translate(${(index * this.graph.g.width / dataSets.length)},12)`)
         .attr('y', 6)
         .attr('dy', '.71em')
         .text(` ${data.title} `);
@@ -366,14 +366,14 @@ export default class CreationView extends View {
       .attr('cy', d => this.graph.s.y(d.value))
       .style('fill', d => this.graph.s.color(d.name));
 
-    // Now that the X axis is final, we can display the mean value lines.
+    // Now that the X axis is final, we can display the regression lines.
     dataSets.forEach(data => {
       this.graph.s.chart.append('line')
-        .attr('class', 'mean')
+        .attr('class', 'regression')
         .attr('x1', this.graph.s.x(0))
-        .attr('y1', this.graph.s.y(data.roundtripMean))
+        .attr('y1', this.graph.s.y(data.regression))
         .attr('x2', this.graph.s.x(ITERATIONS))
-        .attr('y2', this.graph.s.y(data.roundtripMean))
+        .attr('y2', this.graph.s.y(data.regression))
         .style('stroke-width', 2)
         .style('stroke', this.graph.s.color(data.data[0].name));
     });

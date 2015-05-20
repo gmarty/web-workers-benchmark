@@ -251,7 +251,7 @@ export default class MessageView extends View {
       // Caption for each measured set.
       this.graph.g.xAxisEl
         .append('text')
-        .attr('transform', `translate(${(index * this.graph.g.width / 3)},12)`)
+        .attr('transform', `translate(${(index * this.graph.g.width / dataSets.length)},12)`)
         .attr('y', 6)
         .attr('dy', '.71em')
         .text(` ${data.title} `);
