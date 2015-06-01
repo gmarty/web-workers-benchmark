@@ -18,6 +18,12 @@ high-resolution timers.
 
 Results measured on a Flame.
 
+### Creation time
+
+![Creation time](https://rawgit.com/gmarty/latency-web-workers/master/app/img/creation-barchart.svg)
+
+![Creation time scatterplot](https://rawgit.com/gmarty/latency-web-workers/master/app/img/creation-scatter-plot.svg)
+
 ### Latency
 
 ![Latency](https://rawgit.com/gmarty/latency-web-workers/master/app/img/latency-barchart.svg)
