@@ -30,7 +30,7 @@ var manager = new BroadcastChannel('threadsmanager');
  * @type {Function}
  */
 
-var debug = 0 ? console.log.bind(console, '[client]') : function() {};
+var debug = 0 ? console.log.bind(console, '[Client]') : function() {};
 
 /**
  * Extends `Emitter`
@@ -51,14 +51,10 @@ function Client(service, options) {
   if (!(this instanceof Client)) return new Client(service, options);
   this.contract = options && options.contract;
   this.thread = options && options.thread;
+
   this.id = utils.uuid();
-
-  this.requestQueue = [];
-  this.requests = {};
   this._activeStreams = {};
-
-  this.connecting = false;
-  this.connected = false;
+  this._connected = false;
 
   this.service = {
     channel: undefined,
@@ -70,17 +66,8 @@ function Client(service, options) {
     .handle('streamevent', this.onstreamevent, this)
     .handle('broadcast', this.onbroadcast, this);
 
-  // If this client is directly linked to a thread
-  // then listen for messages directly from that thread
-  if (this.thread) this.thread.on('message', this.messenger.parse);
-
-  // TODO: We may be able to add/remove this just for
-  // connectViaManager phase.
-  manager.addEventListener('message', this.messenger.parse);
-
   this.connect();
   debug('initialized', service);
-
 }
 
 /**
@@ -92,9 +79,8 @@ function Client(service, options) {
  */
 
 Client.prototype.connect = function() {
-  if (this.connected) return Promise.resolve();
-  if (this.connecting) return this.connecting;
-  debug('connect');
+  if (this.connected) return this.connected;
+  debug('connecting...');
   var self = this;
 
   // Create a pipe ready for the
@@ -105,16 +91,13 @@ Client.prototype.connect = function() {
   // If the client has a handle on the
   // thread we can connect to it directly,
   // else we go through the manager proxy.
-  this.connecting = this.thread
+  this.connected = this.thread
     ? this.connectViaThread()
     : this.connectViaManager();
 
-  return this.connecting.then(function(service) {
+  return this.connected.then(function(service) {
     debug('connected', service);
-    self.connected = true;
-    self.connecting = false;
     self.service.id = service.id;
-    self.flushRequestQueue();
     thread.connection('outbound');
   });
 };
@@ -127,11 +110,12 @@ Client.prototype.connect = function() {
  */
 
 Client.prototype.connectViaThread = function() {
-  debug('connect via thread');
+  debug('connecting via thread...');
   var self = this;
   return this.thread.getService(self.service.name)
     .then(function(service) {
       debug('got service', service);
+      self.thread.on('message', self.messenger.parse);
       return self.messenger.request(self.thread, {
         type: 'connect',
         recipient: service.id,
@@ -141,12 +125,16 @@ Client.prototype.connectViaThread = function() {
           contract: self.contract
         }
       });
+    })
+    .then(function(service) {
+      self.thread.off('message', self.messenger.parse);
+      return service;
     });
 };
 
 /**
  * Broadcasts a 'connect' message on the
- * manager channel to indicate that a
+ * 'manager' channel to indicate that a
  * client wants to connect with a
  * particular service.
  *
@@ -168,51 +156,49 @@ Client.prototype.connectViaThread = function() {
  */
 
 Client.prototype.connectViaManager = function() {
-  debug('connect via manager');
+  debug('connecting via manager...');
+  var onmessage = this.messenger.parse;
+  manager.addEventListener('message', onmessage);
   return this.messenger.request(manager, {
     type: 'connect',
     recipient: '*',
     data: {
       service: this.service.name,
       client: this.id
-    },
+    }
+  }).then(function(result) {
+    manager.removeEventListener('message', onmessage);
+    return result;
   });
 };
 
 /**
  * Disconnect with the `Service`.
  *
- * This is a required if the `Manager`
+ * You must call this if the `Manager`
  * is to destroy threads. If a thread
  * has `Services` that have connected
  * `Client`s then it is 'in-use'.
+ *
+ * Once we recieve the responce, the service
+ * is pinged one last time to let it know
+ * that the client-side has disconnected.
  *
  * @return {Promise}
  */
 
 Client.prototype.disconnect = function() {
   debug('disconnect');
-  return this.messenger.request(this.service.channel, {
-    type: 'disconnect',
-    recipient: this.service.id,
-    data: this.id
-  }).then(function() {
-
-    // Ping the service one last time to let it
-    // know that we've disconnected client-side
-    this.messenger.push(this.service.channel, {
-      type: 'disconnected',
-      recipient: this.service.id,
-      data: this.id
-    });
-
-    this.service.channel.close();
-    delete this.service.channel;
-    delete this.service.id;
-    this.connected = false;
-    thread.disconnection('outbound');
-    debug('disconnected');
-  }.bind(this));
+  if (!this.connected) return Promise.resolve();
+  return this.request('disconnect', this.id)
+    .then(function() {
+      this.service.channel.close();
+      delete this.service.channel;
+      delete this.service.id;
+      delete this.connected;
+      thread.disconnection('outbound');
+      debug('disconnected');
+    }.bind(this));
 };
 
 /**
@@ -229,25 +215,13 @@ Client.prototype.disconnect = function() {
 
 Client.prototype.request = function(type, data) {
   debug('request', type, data);
-
-  // Request queued
-  if (!this.connected) {
-    debug('request queued');
-    var deferred = utils.deferred();
-    this.requestQueue.push({
-      deferred: deferred,
-      arguments: arguments
+  return this.connect().then(function() {
+    return this.messenger.request(this.service.channel, {
+      type: type,
+      recipient: this.service.id,
+      data: data
     });
-
-    return deferred.promise;
-  }
-
-  // Request made
-  return this.messenger.request(this.service.channel, {
-    type: type,
-    recipient: this.service.id,
-    data: data
-  });
+  }.bind(this));
 };
 
 /**
@@ -304,8 +278,9 @@ Client.prototype.method = function(method) {
  */
 
 Client.prototype.stream = function(method) {
-  var args = [].slice.call(arguments, 1);
   debug('stream', method, args);
+  var args = [].slice.call(arguments, 1);
+  var self = this;
 
   // Use an unique id to identify the
   // stream. We pass this value to the
@@ -326,12 +301,12 @@ Client.prototype.stream = function(method) {
     args: args,
     id: id
   }).catch(function(err) {
-    this.onstreamevent({
+    self.onstreamevent({
       type: 'abort',
       id: id,
       data: err
     });
-  }.bind(this));
+  });
 
   return stream;
 };
@@ -354,22 +329,5 @@ Client.prototype.onstreamevent = function(broadcast) {
   stream._[type](broadcast.data);
   if (type === 'abort' || type === 'close') {
     delete this._activeStreams[id];
-  }
-};
-
-/**
- * Reruns any requests that were queued
- * up before the `Client` established
- * a connection with the `Service`.
- *
- * @private
- */
-
-Client.prototype.flushRequestQueue = function() {
-  debug('flush waiting calls', this.requestQueue);
-  var request;
-  while ((request = this.requestQueue.shift())) {
-    var resolve = request.deferred.resolve;
-    resolve(this.request.apply(this, request.arguments));
   }
 };

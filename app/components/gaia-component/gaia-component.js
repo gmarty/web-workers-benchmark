@@ -1,10 +1,8 @@
-/* jshint node:true */
 /* globals define */
 ;(function(define){'use strict';define(function(require,exports,module){
 /**
  * Locals
  */
-
 var textContent = Object.getOwnPropertyDescriptor(Node.prototype,
     'textContent');
 var innerHTML = Object.getOwnPropertyDescriptor(Element.prototype, 'innerHTML');
@@ -188,9 +186,9 @@ var defaultPrototype = createProto(HTMLElement.prototype, base.properties);
  * Returns a suitable prototype based
  * on the object passed.
  *
+ * @private
  * @param  {HTMLElementPrototype|undefined} proto
  * @return {HTMLElementPrototype}
- * @private
  */
 function getBaseProto(proto) {
   if (!proto) { return defaultPrototype; }
@@ -203,6 +201,7 @@ function getBaseProto(proto) {
  * Extends the given proto and mixes
  * in the given properties.
  *
+ * @private
  * @param  {Object} proto
  * @param  {Object} props
  * @return {Object}
@@ -215,6 +214,7 @@ function createProto(proto, props) {
  * Detects presence of shadow-dom
  * CSS selectors.
  *
+ * @private
  * @return {Boolean}
  */
 var hasShadowCSS = (function() {
@@ -242,6 +242,7 @@ var regex = {
  * them to work from the <style scoped>
  * injected at the root of the component.
  *
+ * @private
  * @return {String}
  */
 function processCss(template, name) {
@@ -283,6 +284,7 @@ function processCss(template, name) {
  * <style> in the head of the
  * document.
  *
+ * @private
  * @param  {String} css
  */
 function injectGlobalCss(css) {
@@ -341,6 +343,7 @@ function injectLightCss(el) {
  *
  *   toCamelCase('foo-bar'); //=> 'fooBar'
  *
+ * @private
  * @param  {Sring} string
  * @return {String}
  */
@@ -386,6 +389,7 @@ function addDirObserver() {
  * source object `target` to a target object `source`.
  * It will return the target object.
  *
+ * @private
  * @param   {Object} target
  * @param   {Object} source
  * @returns {Object}

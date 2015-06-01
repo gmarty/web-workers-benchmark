@@ -1,4 +1,3 @@
-
 'use strict';
 
 /**
@@ -28,40 +27,81 @@ var debug = 0 ? console.log.bind(console, '[Manager]') : function() {};
  */
 var channel = new BroadcastChannel('threadsmanager');
 
-
+/**
+ * Initialize a new `Manager`
+ *
+ * @param {Object} descriptors Service descriptors
+ */
 function Manager(descriptors) {
   if (!(this instanceof Manager)) return new Manager(descriptors);
-  new ManagerInternal(descriptors);
+  this._ = new ManagerPrivate(descriptors);
 }
 
-function ManagerInternal(descriptors) {
-  this.id = 'threadsmanager';
-  this.readMessages = new Array(10);
-  this.processes = { id: {}, src: {} };
-  this.pending = { connects: {} };
-  this.activeServices = {};
-  this.registry = {};
+/**
+ * Destroy the manager and any
+ * threads it's spawned.
+ *
+ * @public
+ */
+Manager.prototype.destroy = function() {
+  this._.destroy();
+};
 
-  this.messenger = new Messenger(this.id, 'manager')
+/**
+ * Hidden `Manager` methods and state.
+ *
+ * @param {Object} descriptors
+ */
+function ManagerPrivate(descriptors) {
+  this.id = 'threadsmanager';
+  this.registry = {};
+  this.threads = {};
+
+  this.messenger = new Messenger(this.id, '[Manager]')
     .handle('connect', this.onconnect, this);
 
   channel.addEventListener('message', this.messenger.parse);
-
   this.register(descriptors);
   debug('intialized');
 }
 
-ManagerInternal.prototype.register = function(descriptors) {
+/**
+ * Destroy the `Manager`.
+ *
+ * @private
+ */
+ManagerPrivate.prototype.destroy = function() {
+  debug('destroy');
+  if (this.destroyed) return;
+  channel.removeEventListener('message', this.messenger.parse);
+  this.destroyThreads();
+  delete this.registry;
+  delete this.threads;
+  this.destroyed = true;
+};
+
+/**
+ * Destroy all threads this Manager created.
+ *
+ * @private
+ */
+ManagerPrivate.prototype.destroyThreads = function() {
+  debug('destroy threads');
+  for (var src in this.threads) this.destroyThread(this.threads[src]);
+};
+
+/**
+ * Register service descriptors.
+ *
+ * @param  {Object} descriptors
+ * @private
+ */
+ManagerPrivate.prototype.register = function(descriptors) {
   debug('register', descriptors);
   for (var name in descriptors) {
     descriptors[name].name = name;
     this.registry[name] = descriptors[name];
   }
-};
-
-ManagerInternal.prototype.onbroadcast = function(broadcast) {
-  debug('on broadcast', broadcast);
-  this.emit(broadcast.type, broadcast.data);
 };
 
 /**
@@ -74,8 +114,8 @@ ManagerInternal.prototype.onbroadcast = function(broadcast) {
  * @param  {Object} data {service,client,contract}
  * @private
  */
-ManagerInternal.prototype.onconnect = function(request) {
-  debug('on connect', request);
+ManagerPrivate.prototype.onconnect = function(request) {
+  debug('on connect');
   var data = request.data;
   var descriptor = this.registry[data.service];
 
@@ -89,11 +129,20 @@ ManagerInternal.prototype.onconnect = function(request) {
   request.respond(
     thread.getService(descriptor.name)
       .then(function(service) {
-        return self.connect(service, client, contract); })
-      .catch(function(e) { throw new Error(e); }));
+        return self.connect(client, service, contract);
+      })
+  );
 };
 
-ManagerInternal.prototype.connect = function(service, client, contract) {
+/**
+ * Connect a Client to a Service.
+ *
+ * @param  {String} client   Client ID
+ * @param  {Object} service  {id,name}
+ * @param  {Object} contract (optional)
+ * @return {Promise}
+ */
+ManagerPrivate.prototype.connect = function(client, service, contract) {
   debug('connect', service, client, contract);
   return this.messenger.request(channel, {
     type: 'connect',
@@ -106,24 +155,48 @@ ManagerInternal.prototype.connect = function(service, client, contract) {
   });
 };
 
-ManagerInternal.prototype.onclientdisconnected = function(msg) {
-  debug('on client disconnected', msg);
-};
-
-ManagerInternal.prototype.onclientconnected = function(msg) {
-  debug('on client connected', msg);
-};
-
-ManagerInternal.prototype.getThread = function(descriptor) {
-  debug('get thread', descriptor, this.processes);
-  var thread = this.processes.src[descriptor.src];
+/**
+ * Get a thread for a given service
+ * descriptor. If there is no existing
+ * thread we create one.
+ *
+ * @param  {Object} descriptor  Service descriptor
+ * @return {ChildThread}
+ */
+ManagerPrivate.prototype.getThread = function(descriptor) {
+  debug('get thread', descriptor);
+  var thread = this.threads[descriptor.src];
   return thread || this.createThread(descriptor);
 };
 
-ManagerInternal.prototype.createThread = function(descriptor) {
+/**
+ * Create a new `ChildThread` for
+ * the given `Service` descriptor.
+ *
+ * @param  {Object} descriptor
+ * @return {ChildThread}
+ */
+ManagerPrivate.prototype.createThread = function(descriptor) {
   debug('create thread', descriptor);
-  var process = new ChildThread(descriptor);
-  this.processes.src[process.src] = process;
-  this.processes.id[process.id] = process;
-  return process;
+  var thread = new ChildThread(descriptor);
+  var self = this;
+
+  this.threads[thread.src] = thread;
+  thread.on('redundant', function fn() {
+    thread.off('redundant', fn);
+    self.destroyThread(thread);
+  });
+
+  return thread;
+};
+
+/**
+ * Destroy a thread.
+ *
+ * @param  {ChildThread} thread
+ */
+ManagerPrivate.prototype.destroyThread = function(thread) {
+  debug('destroy thread');
+  thread.destroy();
+  delete this.threads[thread.src];
 };

@@ -9,15 +9,12 @@ var emitter = require('./emitter');
 var utils = require('./utils');
 
 /**
- * Locals
+ * Mini Logger
+ *
+ * @type {Function}
  */
 
 var debug = 0 ? console.log.bind(console, '[ThreadGlobal]') : function() {};
-
-const ERRORS = {
-  1: 'Unknown connection type',
-  2: 'Service already defined'
-};
 
 /**
  * Extend `Emitter`
@@ -26,12 +23,13 @@ const ERRORS = {
 ThreadGlobal.prototype = Object.create(emitter.prototype);
 
 /**
- * Initialize a new `ThreadGlobal`
+ * Initialize a new `ThreadGlobal`.
  *
  * @private
  */
+
 function ThreadGlobal() {
-  this.id = getThreadId();
+  this.id = utils.uuid();
   this.type = utils.env();
   this.isRoot = isRoot();
   this.manager = new BroadcastChannel('threadsmanager');
@@ -42,7 +40,7 @@ function ThreadGlobal() {
     outbound: 0
   };
 
-  this.messenger = new Messenger(this.id, '[thread-global]')
+  this.messenger = new Messenger(this.id, '[ThreadGlobal]')
     .handle('ping', this.onPing, this);
 
   this.onmessage = this.onmessage.bind(this);
@@ -57,6 +55,7 @@ function ThreadGlobal() {
  *
  * @private
  */
+
 ThreadGlobal.prototype.listen = function() {
   debug('listen');
   switch (this.type) {
@@ -81,7 +80,9 @@ ThreadGlobal.prototype.listen = function() {
  *
  * @private
  */
+
 ThreadGlobal.prototype.ready = function() {
+  if (this.isRoot) return;
   debug('ready', this.id);
   this.messenger.push(this, {
     type: 'threadready',
@@ -93,14 +94,19 @@ ThreadGlobal.prototype.ready = function() {
  * Respond when the outside world asks
  * if we're ready.
  *
- * TODO: This callback may not be required.
- *
  * @private
  */
+
 ThreadGlobal.prototype.onPing = function(request) {
   debug('on ping');
   request.respond(this.serialize());
 };
+
+/**
+ * Return serialized state.
+ *
+ * @return {Object}
+ */
 
 ThreadGlobal.prototype.serialize = function() {
   return {
@@ -125,6 +131,7 @@ ThreadGlobal.prototype.serialize = function() {
  * @param  {Event} e
  * @private
  */
+
 ThreadGlobal.prototype.onmessage = function(e) {
   debug('on message', e);
   this.messenger.parse(e);
@@ -142,11 +149,10 @@ ThreadGlobal.prototype.onmessage = function(e) {
  *
  * @param  {Service} service
  */
+
 ThreadGlobal.prototype.serviceReady = function(service) {
   debug('service ready', service);
-  if (this.services[service.name]) {
-    throw new Error('Service "' + service.name + '" already defined');
-  }
+  if (this.services[service.name]) throw error(2, service.name);
 
   this.services[service.name] = {
     id: service.id,
@@ -173,6 +179,7 @@ ThreadGlobal.prototype.serviceReady = function(service) {
  * @param  {Message} message
  * @public
  */
+
 ThreadGlobal.prototype.postMessage = function(message) {
   debug('postMessage (%s)', this.type, message);
   switch (this.type) {
@@ -191,8 +198,9 @@ ThreadGlobal.prototype.postMessage = function(message) {
  *
  * @param  {String} type  ['incoming','outgoing']
  */
+
 ThreadGlobal.prototype.connection = function(type) {
-  if (!(type in this.connections)) throw Error(ERRORS[1]);
+  if (!(type in this.connections)) throw error(1, type);
   this.connections[type]++;
   debug('connection', type, this.connections[type]);
   this.check();
@@ -203,8 +211,9 @@ ThreadGlobal.prototype.connection = function(type) {
  *
  * @param  {String} type  ['incoming','outgoing']
  */
+
 ThreadGlobal.prototype.disconnection = function(type) {
-  if (!(type in this.connections)) throw Error(ERRORS[1]);
+  if (!(type in this.connections)) throw error(1, type);
   this.connections[type]--;
   debug('disconnection', type, this.connections[type]);
   this.check();
@@ -217,6 +226,7 @@ ThreadGlobal.prototype.disconnection = function(type) {
  *
  * @private
  */
+
 ThreadGlobal.prototype.check = function() {
   if (this.isRedundant()) {
     debug('redundant');
@@ -230,6 +240,7 @@ ThreadGlobal.prototype.check = function() {
  *
  * @return {Boolean}
  */
+
 ThreadGlobal.prototype.isRedundant = function() {
   return !this.isRoot && this.isDetached();
 };
@@ -238,8 +249,9 @@ ThreadGlobal.prototype.isRedundant = function() {
  * A thread is 'detached' when
  * it has no clients.
  *
- * @return {Boolean} [description]
+ * @return {Boolean}
  */
+
 ThreadGlobal.prototype.isDetached = function() {
   return !this.connections.inbound;
 };
@@ -248,22 +260,45 @@ ThreadGlobal.prototype.isDetached = function() {
  * Utils
  */
 
-function getThreadId() {
-  return utils.query(location.search).pid
-    || (inWindow() && window.name)
-    || utils.uuid();
-}
+/**
+ * Detects if current context
+ * is the 'root' window.
+ *
+ * @return {Boolean}
+ */
 
 function isRoot() {
   return inWindow() && window.parent === window;
 }
+
+/**
+ * Detects if current context
+ * is runnign in a Window.
+ *
+ * @return {Boolean}
+ */
 
 function inWindow() {
   return typeof window !== 'undefined';
 }
 
 /**
- * Exports
+ * Handy `Error` factory.
+ *
+ * @param  {Number} id
+ * @return {String}
+ */
+
+function error(id) {
+  var args = [].slice.call(arguments, 1);
+  return new Error({
+    1: 'Unknown connection type: "' + args[0] + '"',
+    2: 'Service "' + args[0] + '"already defined'
+  }[id]);
+}
+
+/**
+ * Export `ThreadGlobal` singleton
  */
 
 module.exports = new ThreadGlobal();

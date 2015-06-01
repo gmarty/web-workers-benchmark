@@ -114,13 +114,13 @@ export default class MessageController extends Controller {
 
       var dataSet = [];
       var benchmark = () => {
-        var obj = this.getObject(size);
+        var object = this.getObject(size);
         var now = Date.now();
         var highResolutionBefore = window.performance.now();
 
         this.client
           .method('ping', {
-            m: obj,
+            m: object,
             t: now,
             s: size
           })
@@ -162,12 +162,12 @@ export default class MessageController extends Controller {
     return new Promise(resolve => {
       var dataSet = [];
       var benchmark = () => {
-        var obj = this.getObject(size);
+        var object = this.getObject(size);
         var now = Date.now();
         var highResolutionBefore = window.performance.now();
 
         this.rawWorker.postMessage({
-          m: obj,
+          m: object,
           t: now,
           s: size
         });
@@ -215,12 +215,12 @@ export default class MessageController extends Controller {
 
       var dataSet = [];
       var benchmark = () => {
-        var obj = this.getObject(size);
+        var object = this.getObject(size);
         var now = Date.now();
         var highResolutionBefore = window.performance.now();
 
         this.channel.postMessage({
-          m: obj,
+          m: object,
           t: now,
           s: size
         });
@@ -257,12 +257,12 @@ export default class MessageController extends Controller {
   }
 
   getObject(size = 0) {
-    var obj = new Uint8Array(size);
+    var object = new Uint8Array(size);
 
     for (var i = 0; i < size; i++) {
-      obj[i] = Math.random() * 0xFF;
+      object[i] = Math.random() * 0xFF;
     }
 
-    return obj;
+    return object;
   }
 }

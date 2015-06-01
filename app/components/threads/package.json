@@ -18,12 +18,12 @@
     "test": "./node_modules/karma/bin/karma start test/karma.conf.js --single-run",
     "test-dev": "./node_modules/karma/bin/karma start test/karma.conf.js",
     "bundle": "browserify index.js -s threads -o threads.js",
-    "minify": "uglifyjs threads.js --compress --mangle --reserved='require,define,module,exports' > threads.min.js",
-    "build": "npm run bundle && npm run minify",
+    "compress": "uglifyjs threads.js --compress='drop_console,sequences,dead_code,booleans,conditionals,unused,if_return,join_vars,pure_funcs=\"debug\"' --mangle --reserved='require,define,module,exports' > threads.min.js",
+    "build": "npm run bundle && npm run compress",
     "watch": "npm-watch"
   },
   "watch": {
-    "bundle": "lib/*.js"
+    "bundle": "lib/**/*.js"
   },
   "repository": {
     "type": "git",
@@ -31,5 +31,12 @@
   },
   "bugs": {
     "url": "https://github.com/gaia-components/threads/issues"
+  },
+  "dependencies": {
+    "browserify": "^10.1.0",
+    "karma": "^0.12.31",
+    "karma-firefox-launcher": "^0.1.4",
+    "karma-mocha": "^0.1.10",
+    "karma-sinon-chai": "^0.3.0"
   }
 }

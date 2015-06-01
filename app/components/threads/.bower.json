@@ -13,11 +13,11 @@
     "tests"
   ],
   "homepage": "https://github.com/gaia-components/threads",
-  "_release": "30f0ef1498",
+  "_release": "1e334ce5bb",
   "_resolution": {
     "type": "branch",
     "branch": "master",
-    "commit": "30f0ef1498fd49adf73d884bd68db756864589a1"
+    "commit": "1e334ce5bbc4ba0d0790372466de8ec9883ba0c4"
   },
   "_source": "git@github.com:gaia-components/threads.git",
   "_target": "master",

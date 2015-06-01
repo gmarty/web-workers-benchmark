@@ -12,33 +12,79 @@ module.exports = Emitter;
  * @type {Function}
  */
 
-var debug = 0 ? console.log.bind(console, '[emitter]') : function(){};
+var debug = 0 ? console.log.bind(console, '[Emitter]') : function(){};
 
+/**
+ * Create new `Emitter`
+ *
+ * @constructor
+ */
 function Emitter() {}
 
-Emitter.prototype = {
-  emit: function(type, data) {
-    debug('emit', type, data);
-    if (!this._callbacks) return;
+/**
+ * Add an event listener.
+ *
+ * It is possible to subscript to * events.
+ *
+ * @param  {String}   type
+ * @param  {Function} callback
+ * @return {Emitter} for chaining
+ */
+Emitter.prototype.on = function(type, callback) {
+  debug('on', type, callback);
+  if (!this._callbacks) this._callbacks = {};
+  if (!this._callbacks[type]) this._callbacks[type] = [];
+  this._callbacks[type].push(callback);
+  return this;
+};
+
+/**
+ * Remove an event listener.
+ *
+ * Example:
+ *
+ *   emitter.off('name', fn); // remove one callback
+ *   emitter.off('name'); // remove all callbacks for 'name'
+ *   emitter.off(); // remove all callbacks
+ *
+ * @param  {String} type (optional)
+ * @param  {Function} callback (optional)
+ * @return {Emitter} for chaining
+ */
+Emitter.prototype.off = function(type, callback) {
+  debug('off', type, callback);
+  if (this._callbacks) {
+    switch (arguments.length) {
+      case 0: this._callbacks = {}; break;
+      case 1: delete this._callbacks[type]; break;
+      default:
+        var typeListeners = this._callbacks[type];
+        if (!typeListeners) return;
+        var i = typeListeners.indexOf(callback);
+        if (~i) typeListeners.splice(i, 1);
+      break;
+    }
+  }
+  return this;
+};
+
+/**
+ * Emit an event.
+ *
+ * Example:
+ *
+ *   emitter.emit('name', { some: 'data' });
+ *
+ * @param  {String} type
+ * @param  {*} data
+ * @return {Emitter} for chaining
+ */
+Emitter.prototype.emit = function(type, data) {
+  debug('emit', type, data);
+  if (this._callbacks) {
     var fns = this._callbacks[type] || [];
     fns = fns.concat(this._callbacks['*'] || []);
-    for (var i = 0; i < fns.length; i++) {
-      fns[i].call(this, data, type);
-    }
-  },
-
-  on: function(type, callback) {
-    debug('on', type, callback);
-    if (!this._callbacks) this._callbacks = {};
-    if (!this._callbacks[type]) this._callbacks[type] = [];
-    this._callbacks[type].push(callback);
-  },
-
-  off: function(type, callback) {
-    if (!this._callbacks) return;
-    var typeListeners = this._callbacks[type];
-    if (!typeListeners) return;
-    var i = typeListeners.indexOf(callback);
-    if (~i) typeListeners.splice(i, 1);
+    for (var i = 0; i < fns.length; i++) fns[i].call(this, data, type);
   }
+  return this;
 };

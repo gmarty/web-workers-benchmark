@@ -1,4 +1,4 @@
-# threads [![](https://travis-ci.org/gaia-components/threads.svg)](https://travis-ci.org/gaia-components/threads) [![devDependency Status](https://david-dm.org/gaia-components/threads/dev-status.svg)](https://david-dm.org/gaia-components/threads#info=devDependencies)
+# threads.js [![](https://travis-ci.org/gaia-components/threads.svg)](https://travis-ci.org/gaia-components/threads) [![devDependency Status](https://david-dm.org/gaia-components/threads/dev-status.svg)](https://david-dm.org/gaia-components/threads#info=devDependencies)
 
 Exposes services from one 'thread' to another.
 
@@ -8,7 +8,7 @@ A 'thread' could be an instance of:
 - `Worker`
 - `SharedWorker`
 
-### Service
+## Service
 
 A `Service` is a collection of methods exposed to a `Client`. Methods can be sync or async (using `Promise`s).
 
@@ -26,7 +26,7 @@ threads.service('my-service')
   });
 ```
 
-### Client
+## Client
 
 `Service`s are digested by `Client`s.
 
@@ -39,7 +39,7 @@ client.method('myMethod', 'world').then(value => {
 });
 ```
 
-### Manager
+## Manager
 
 The `Manager` acts as a middleman between the `Client` and the `Service`. It listens for newly created clients and will attempt to pair it to a known service. If the requested service isn't running it will spin one up.
 
@@ -52,7 +52,21 @@ threads.manager({
 });
 ```
 
-### Events
+#### Supplying a `target`
+
+If you'd like to spawn you own thread you can pass the `target` thread directly to the manager definition. Once handed over to the `Manager` the thread is out of your control.
+
+```js
+threads.manager({
+  'my-service': {
+    src: '/workers/my-service.html',
+    type: 'window',
+    target: document.querySelector('iframe')
+  }
+});
+```
+
+## Events
 
 Events can be fired from a `Service`, these will trigger any subscribed callbacks on the client-side.
 
@@ -70,7 +84,15 @@ var client = threads.client('my-service');
 client.on('tick', count => console.log('tick', count));
 ```
 
-### Contracts
+#### Client#on(name, callback)
+
+Subscribe to a service broadcast. Callback will be passed `data` as the first argument.
+
+#### Service#broadcast(name[, data, [clients]])
+
+Broadcast's an event from a `Service` to connected `Client`s. The third argument can be used to target selected clients by their `client.id`.
+
+## Contracts
 
 Contracts can be used to enforce a strict, well defined protocol between `Service` and `Client`. A `contract` object accepts two keys: `methods` and `events`. Each object defines an event/method name and the expected arguments.
 
@@ -92,7 +114,15 @@ threads.manager({
 });
 ```
 
-### Streams
+Contracts can alternatively be attached directly to a `Service`.
+
+```js
+threads.service('my-service')
+  .contract(myServiceContract)
+  .method('myMethod', function(param) { return 'hello: ' + param; });
+```
+
+## Streams
 
 Some services need to send data in *chunks* to the clients and also allow
 a way of canceling the action before it is completed. For these cases register
@@ -152,18 +182,13 @@ The methods `close()`, `abort()` and `write()` return Promises that can be used
 to validate if action was executed (eg. `write` have no effect after `close` so
 promise will be rejected).
 
+## Memory management
 
-### Bypassing the Manager
-
-
-
-### Memory management
-
-Threads keep track of how many inbound clients are connected to them. When the last client disconnects they will broadcast a `'redundant'` event. Whatever spawned the thread (usually the Manager) can then destroy it to free up memory.
+Each thread keeps track of how many inbound clients are connected to them. When the last client disconnects they will broadcast a `'redundant'` event. Whatever spawned the thread (usually the Manager) can then destroy it to free up memory.
 
 To manage memory in you apps you can `.disconnect()` clients when the app is in the background and re`.connect() when they come back to the foreground.
 
-### Versioning services
+## Versioning services
 
 Right now the best way to version a service is include a version in the service name.
 
@@ -174,11 +199,3 @@ threads.service('my-service@v0.1.0', ...);
 ```js
 threads.client('my-service@v0.1.0');
 ```
-
-### Open questions
-
-- When `type: 'window'` should we do the job of loading this in a `.html` document, or is it best to leave this to the user.
-
-- Workers use `importScripts()` and window `<script>`, what is a sensible format that would allow authoring script that will run in either environment type?
-
-- With `BroadcastChannel` it's possible for a `Worker` to have a client from another browser 'tab'. This is dangerous as if 'tab1' is closed, any clients in 'tab2' that depend on services in 'tab1' will be disconnected. This could be fixed by ensuring only `SharedWorkers` can used for cross-tab services and that each tab's manager calls `new SharedWorker(...)`.

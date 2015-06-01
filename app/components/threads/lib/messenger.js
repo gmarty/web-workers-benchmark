@@ -12,10 +12,10 @@ var utils = require('./utils');
  * @type {Function}
  */
 
-var debug = 0 ? console.log.bind(console, '[messenger]') : function() {};
+var debug = 0 ? console.log.bind(console, '[Messenger]') : function() {};
 
 /**
- * Message
+ * Exports
  */
 
 module.exports = Messenger;
@@ -216,10 +216,10 @@ Messenger.prototype.onresponse = function(e) {
     'rejected': 'reject'
   }[result.state];
 
-  // The value resided under a different
+  // The value resides under a different
   // key depending on whether the promise
   // was 'rejected' or 'resolved'
-  var value = result.value || result.reason;
+  var value = result.reason || result.value;
   promise[method](value);
 
   // Clean up
@@ -337,7 +337,7 @@ function Request(e) {
  */
 
 Request.prototype.respond = function(result) {
-  debug('respond');
+  debug('respond', result);
   if (this.responded) return;
   this.responded = true;
 
@@ -347,8 +347,13 @@ Request.prototype.respond = function(result) {
   if (result instanceof Error) reject(result);
 
   // Call the handler and make
-  // sure return value is a promise
-  Promise.resolve(result).then(resolve, reject);
+  // sure return value is a promise.
+  // If the returned value is unclonable
+  // then the send() method will throw,
+  // the .catch() will reject in this case.
+  return Promise.resolve(result)
+    .then(resolve, reject)
+    .catch(reject);
 
   function resolve(value) {
     debug('resolved', value);

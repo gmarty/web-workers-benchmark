@@ -13,8 +13,8 @@ var utils = require('../utils');
  * exports
  */
 
-module.exports = Service;
-module.exports.Stream = ServiceStream; // exposed for testing
+exports = module.exports = Service;
+exports.Stream = ServiceStream; // for testing
 
 /**
  * Mini Logger
@@ -22,7 +22,7 @@ module.exports.Stream = ServiceStream; // exposed for testing
  * @type {Function}
  */
 
-var debug = 0 ? console.log.bind(console, '[service]') : function(){};
+var debug = 0 ? console.log.bind(console, '[Service]') : function(){};
 
 /**
  * Global broadcast channel that
@@ -91,8 +91,8 @@ Service.prototype.contract = function(contract) {
  * @param {*} data Payload to be transmitted.
  */
 
-Service.prototype.broadcast = function(type, data) {
-  this.private.broadcast(type, data);
+Service.prototype.broadcast = function(type, data, clients) {
+  this.private.broadcast(type, data, clients);
   return this;
 };
 
@@ -117,13 +117,12 @@ function ServicePrivate(service) {
   this.streams = {};
   this.activeStreams = {};
 
-  this.messenger = new Messenger(this.id, '[service]')
+  this.messenger = new Messenger(this.id, '[Service]')
     .handle('connect', this.onconnect, this)
     .handle('stream', this.onstream, this)
     .handle('streamcancel', this.onstreamcancel, this)
     .handle('method', this.onmethod, this)
-    .handle('disconnect', this.ondisconnect, this)
-    .handle('disconnected', this.ondisconnected, this);
+    .handle('disconnect', this.ondisconnect, this);
 
   this.listen();
 
@@ -263,27 +262,38 @@ ServicePrivate.prototype.onconnect = function(request) {
   });
 };
 
+/**
+ * Responds to `Client` request to disconnect.
+ *
+ * All the cleanup is done after we have
+ * sent the response as we need the
+ * channel to send the message back.
+ *
+ * @param  {Request} request
+ */
+
 ServicePrivate.prototype.ondisconnect = function(request) {
   var client = request.data;
 
-  if (!client) return;
+  // Check `Client` is known
   if (!this.channels[client]) return;
-
   debug('on disconnect', client);
+
   var deferred = utils.deferred();
 
   // TODO: Check there are no requests/methods
   // pending for this client, before disconnecting.
+
   deferred.resolve();
 
-  thread.disconnection('inbound');
-  request.respond(deferred.promise);
-};
-
-ServicePrivate.prototype.ondisconnected = function(client) {
-  debug('disconnected', client);
-  this.channels[client].close();
-  delete this.channels[client];
+  deferred.promise.then(function() {
+    return request.respond();
+  }).then(function() {
+    debug('disconnected', client);
+    this.channels[client].close();
+    delete this.channels[client];
+    thread.disconnection('inbound');
+  }.bind(this));
 };
 
 ServicePrivate.prototype.setContract = function(contract) {
@@ -304,6 +314,7 @@ ServicePrivate.prototype.setContract = function(contract) {
  * @param {String}   name
  * @param {Function} fn
  */
+
 ServicePrivate.prototype.addMethod = function(name, fn) {
   this.methods[name] = fn;
 };
@@ -369,11 +380,13 @@ ServicePrivate.prototype.listen = function() {
  *
  * @param  {String} type
  * @param  {*} data to pass with the event
+ * @param  {Array} (optional) array of client-ids to target
  */
 
-ServicePrivate.prototype.broadcast = function(type, data) {
+ServicePrivate.prototype.broadcast = function(type, data, clients) {
   debug('broadcast', type, data);
   for (var client in this.channels) {
+    if (clients && !~clients.indexOf(client)) continue;
     this.messenger.push(this.channels[client], {
       type: 'broadcast',
       recipient: client,
@@ -399,5 +412,5 @@ function error(id) {
     4: 'method "' + args[0] + '" doesn\'t exist',
     5: 'arguments types don\'t match contract',
     6: 'stream "' + args[0] + '" doesn\'t exist',
-  });
+  }[id]);
 }
