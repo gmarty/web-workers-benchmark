@@ -1,4 +1,4 @@
-# ![Web workers benchmark](https://raw.githubusercontent.com/gmarty/latency-web-workers/master/app/img/icons/32.png "Web workers benchmark") Web workers benchmark
+# ![Web workers benchmark](https://raw.githubusercontent.com/gmarty/web-workers-benchmark/master/app/img/icons/32.png "Web workers benchmark") Web workers benchmark
 
 > Benchmark various aspects of Web workers.
 
@@ -20,16 +20,16 @@ Results measured on a Flame.
 
 ### Creation time
 
-![Creation time](https://rawgit.com/gmarty/latency-web-workers/master/app/img/creation-barchart.svg)
+![Creation time](https://rawgit.com/gmarty/web-workers-benchmark/master/app/img/creation-barchart.svg)
 
-![Creation time scatterplot](https://rawgit.com/gmarty/latency-web-workers/master/app/img/creation-scatter-plot.svg)
+![Creation time scatterplot](https://rawgit.com/gmarty/web-workers-benchmark/master/app/img/creation-scatter-plot.svg)
 
 ### Latency
 
-![Latency](https://rawgit.com/gmarty/latency-web-workers/master/app/img/latency-barchart.svg)
+![Latency](https://rawgit.com/gmarty/web-workers-benchmark/master/app/img/latency-barchart.svg)
 
-![Latency scatterplot](https://rawgit.com/gmarty/latency-web-workers/master/app/img/latency-scatter-plot.svg)
+![Latency scatterplot](https://rawgit.com/gmarty/web-workers-benchmark/master/app/img/latency-scatter-plot.svg)
 
 ### Transfer speed
 
-![Speed transfer](https://rawgit.com/gmarty/latency-web-workers/master/app/img/transfer-speed-scatter-plot.svg)
+![Speed transfer](https://rawgit.com/gmarty/web-workers-benchmark/master/app/img/transfer-speed-scatter-plot.svg)
