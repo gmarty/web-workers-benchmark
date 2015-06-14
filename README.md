@@ -4,15 +4,17 @@
 
 ## What?
 
-A technical app to benchmark Web workers using different methods:
+A technical, mobile first app to benchmark different aspects related to web workers:
+
+* Instantiation
+* Messaging latency
+* Transfer speed
+
+The following communication methods are used:
 
 * [postMessage](https://developer.mozilla.org/en-US/docs/Web/API/Worker/postMessage)
 * [BroadcastChannel](https://developer.mozilla.org/en-US/docs/Web/API/BroadcastChannel/BroadcastChannel)
 * the [threads](https://github.com/gaia-components/threads) library
-
-For each method, the upload (main thread -> worker) and download (worker -> main
-thread) latencies are measured. The roundtrip is also measured using
-high-resolution timers.
 
 ## Results
 
@@ -33,3 +35,9 @@ Results measured on a Flame.
 ### Transfer speed
 
 ![Speed transfer](https://rawgit.com/gmarty/web-workers-benchmark/master/app/img/transfer-speed-scatter-plot.svg)
+
+## Compatibility
+
+While this app itself works cross-browser, the thread.js library requires an environment that
+supports the Broadcast Channel API (i.e. Firefox only currently). In the future, this may not be the
+case. It will then be possible to run this app in other browsers.
