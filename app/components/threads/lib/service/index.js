@@ -48,6 +48,15 @@ function Service(name) {
 }
 
 /**
+ * Prototype assigned to variable
+ * to improve compression.
+ *
+ * @type {Object}
+ */
+
+var ServicePrototype = Service.prototype;
+
+/**
  * Register a method that will be
  * exposed to all the clients.
  *
@@ -55,7 +64,7 @@ function Service(name) {
  * @param {Function} fn Implementation
  */
 
-Service.prototype.method = function(name, fn) {
+ServicePrototype.method = function(name, fn) {
   this.private.addMethod(name, fn);
   return this;
 };
@@ -67,7 +76,7 @@ Service.prototype.method = function(name, fn) {
  * @param {Function} fn Implementation
  */
 
-Service.prototype.stream = function(name, fn) {
+ServicePrototype.stream = function(name, fn) {
   this.private.addStream(name, fn);
   return this;
 };
@@ -79,7 +88,7 @@ Service.prototype.stream = function(name, fn) {
  * @param {Object} contract
  */
 
-Service.prototype.contract = function(contract) {
+ServicePrototype.contract = function(contract) {
   this.private.setContract(contract);
   return this;
 };
@@ -91,7 +100,7 @@ Service.prototype.contract = function(contract) {
  * @param {*} data Payload to be transmitted.
  */
 
-Service.prototype.broadcast = function(type, data, clients) {
+ServicePrototype.broadcast = function(type, data, clients) {
   this.private.broadcast(type, data, clients);
   return this;
 };
@@ -125,16 +134,17 @@ function ServicePrivate(service) {
     .handle('disconnect', this.ondisconnect, this);
 
   this.listen();
-
-  // Don't declare service ready until
-  // any pending tasks in the event-loop
-  // have completed. Namely any pending
-  // 'connect' events for `SharedWorkers`.
-  // If we broadcast the 'serviceready'
-  // event before the thread-parent has
-  // 'connected', it won't be heard.
-  setTimeout(this.ready.bind(this));
+  this.ready();
 }
+
+/**
+ * Prototype assigned to variable
+ * to improve compression.
+ *
+ * @type {Object}
+ */
+
+var ServicePrivatePrototype = ServicePrivate.prototype;
 
 /**
  * Called when a client calls
@@ -144,7 +154,7 @@ function ServicePrivate(service) {
  * @return {*}
  */
 
-ServicePrivate.prototype.onmethod = function(request) {
+ServicePrivatePrototype.onmethod = function(request) {
   debug('method', request.data);
   var method = request.data;
   var fn = this.methods[method.name];
@@ -163,7 +173,7 @@ ServicePrivate.prototype.onmethod = function(request) {
  * @param {Object} request Request object
  */
 
-ServicePrivate.prototype.onstream = function(request) {
+ServicePrivatePrototype.onstream = function(request) {
   debug('stream', request.data);
   var data = request.data;
   var fn = this.streams[data.name];
@@ -199,7 +209,7 @@ ServicePrivate.prototype.onstream = function(request) {
  * @private
  */
 
-ServicePrivate.prototype.onstreamcancel = function(request) {
+ServicePrivatePrototype.onstreamcancel = function(request) {
   var data = request.data;
   var id = data.id;
   var stream = this.activeStreams[id];
@@ -218,7 +228,7 @@ ServicePrivate.prototype.onstreamcancel = function(request) {
  * @private
  */
 
-ServicePrivate.prototype.ready = function() {
+ServicePrivatePrototype.ready = function() {
   debug('ready');
   thread.serviceReady(this);
 };
@@ -237,7 +247,7 @@ ServicePrivate.prototype.ready = function() {
  * @param  {Object} data
  */
 
-ServicePrivate.prototype.onconnect = function(request) {
+ServicePrivatePrototype.onconnect = function(request) {
   var data = request.data;
   var client = data.client;
   var contract = data.contract;
@@ -272,7 +282,7 @@ ServicePrivate.prototype.onconnect = function(request) {
  * @param  {Request} request
  */
 
-ServicePrivate.prototype.ondisconnect = function(request) {
+ServicePrivatePrototype.ondisconnect = function(request) {
   var client = request.data;
 
   // Check `Client` is known
@@ -296,7 +306,7 @@ ServicePrivate.prototype.ondisconnect = function(request) {
   }.bind(this));
 };
 
-ServicePrivate.prototype.setContract = function(contract) {
+ServicePrivatePrototype.setContract = function(contract) {
   if (!contract) return;
   this.contract = contract;
   debug('contract set', contract);
@@ -315,7 +325,7 @@ ServicePrivate.prototype.setContract = function(contract) {
  * @param {Function} fn
  */
 
-ServicePrivate.prototype.addMethod = function(name, fn) {
+ServicePrivatePrototype.addMethod = function(name, fn) {
   this.methods[name] = fn;
 };
 
@@ -327,7 +337,7 @@ ServicePrivate.prototype.addMethod = function(name, fn) {
  * @param {Function} fn
  */
 
-ServicePrivate.prototype.addStream = function(name, fn) {
+ServicePrivatePrototype.addStream = function(name, fn) {
   this.streams[name] = fn;
 };
 
@@ -341,7 +351,7 @@ ServicePrivate.prototype.addStream = function(name, fn) {
  * @param  {Object} method
  */
 
-ServicePrivate.prototype.checkMethodCall = function(method) {
+ServicePrivatePrototype.checkMethodCall = function(method) {
   debug('check method call', method);
 
   var name = method.name;
@@ -369,7 +379,7 @@ ServicePrivate.prototype.checkMethodCall = function(method) {
  * @private
  */
 
-ServicePrivate.prototype.listen = function() {
+ServicePrivatePrototype.listen = function() {
   manager.addEventListener('message', this.messenger.parse);
   thread.on('message', this.messenger.parse);
 };
@@ -383,7 +393,7 @@ ServicePrivate.prototype.listen = function() {
  * @param  {Array} (optional) array of client-ids to target
  */
 
-ServicePrivate.prototype.broadcast = function(type, data, clients) {
+ServicePrivatePrototype.broadcast = function(type, data, clients) {
   debug('broadcast', type, data);
   for (var client in this.channels) {
     if (clients && !~clients.indexOf(client)) continue;

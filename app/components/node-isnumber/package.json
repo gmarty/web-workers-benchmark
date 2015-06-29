@@ -8,7 +8,7 @@
   },
   "dependencies": {},
   "devDependencies": {
-    "tape": "~2.4.0"
+    "tape": "~4.0.0"
   },
   "scripts": {
     "test": "node test/"
@@ -27,5 +27,6 @@
   "license": "MIT",
   "bugs": {
     "url": "https://github.com/brycebaril/node-isnumber/issues"
-  }
+  },
+  "homepage": "https://github.com/brycebaril/node-isnumber"
 }

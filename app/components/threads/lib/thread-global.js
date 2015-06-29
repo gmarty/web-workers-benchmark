@@ -51,12 +51,21 @@ function ThreadGlobal() {
 }
 
 /**
+ * Prototype assigned to variable
+ * to improve compression.
+ *
+ * @type {Object}
+ */
+
+var ThreadGlobalPrototype = ThreadGlobal.prototype;
+
+/**
  * Listens for incoming messages.
  *
  * @private
  */
 
-ThreadGlobal.prototype.listen = function() {
+ThreadGlobalPrototype.listen = function() {
   debug('listen');
   switch (this.type) {
     case 'sharedworker':
@@ -81,7 +90,7 @@ ThreadGlobal.prototype.listen = function() {
  * @private
  */
 
-ThreadGlobal.prototype.ready = function() {
+ThreadGlobalPrototype.ready = function() {
   if (this.isRoot) return;
   debug('ready', this.id);
   this.messenger.push(this, {
@@ -97,7 +106,7 @@ ThreadGlobal.prototype.ready = function() {
  * @private
  */
 
-ThreadGlobal.prototype.onPing = function(request) {
+ThreadGlobalPrototype.onPing = function(request) {
   debug('on ping');
   request.respond(this.serialize());
 };
@@ -108,7 +117,7 @@ ThreadGlobal.prototype.onPing = function(request) {
  * @return {Object}
  */
 
-ThreadGlobal.prototype.serialize = function() {
+ThreadGlobalPrototype.serialize = function() {
   return {
     id: this.id,
     services: this.services
@@ -132,7 +141,7 @@ ThreadGlobal.prototype.serialize = function() {
  * @private
  */
 
-ThreadGlobal.prototype.onmessage = function(e) {
+ThreadGlobalPrototype.onmessage = function(e) {
   debug('on message', e);
   this.messenger.parse(e);
   this.emit('message', e);
@@ -150,7 +159,7 @@ ThreadGlobal.prototype.onmessage = function(e) {
  * @param  {Service} service
  */
 
-ThreadGlobal.prototype.serviceReady = function(service) {
+ThreadGlobalPrototype.serviceReady = function(service) {
   debug('service ready', service);
   if (this.services[service.name]) throw error(2, service.name);
 
@@ -180,7 +189,7 @@ ThreadGlobal.prototype.serviceReady = function(service) {
  * @public
  */
 
-ThreadGlobal.prototype.postMessage = function(message) {
+ThreadGlobalPrototype.postMessage = function(message) {
   debug('postMessage (%s)', this.type, message);
   switch (this.type) {
     case 'worker':
@@ -199,7 +208,7 @@ ThreadGlobal.prototype.postMessage = function(message) {
  * @param  {String} type  ['incoming','outgoing']
  */
 
-ThreadGlobal.prototype.connection = function(type) {
+ThreadGlobalPrototype.connection = function(type) {
   if (!(type in this.connections)) throw error(1, type);
   this.connections[type]++;
   debug('connection', type, this.connections[type]);
@@ -212,7 +221,7 @@ ThreadGlobal.prototype.connection = function(type) {
  * @param  {String} type  ['incoming','outgoing']
  */
 
-ThreadGlobal.prototype.disconnection = function(type) {
+ThreadGlobalPrototype.disconnection = function(type) {
   if (!(type in this.connections)) throw error(1, type);
   this.connections[type]--;
   debug('disconnection', type, this.connections[type]);
@@ -227,7 +236,7 @@ ThreadGlobal.prototype.disconnection = function(type) {
  * @private
  */
 
-ThreadGlobal.prototype.check = function() {
+ThreadGlobalPrototype.check = function() {
   if (this.isRedundant()) {
     debug('redundant');
     this.messenger.push(this, { type: 'redundant' });
@@ -241,7 +250,7 @@ ThreadGlobal.prototype.check = function() {
  * @return {Boolean}
  */
 
-ThreadGlobal.prototype.isRedundant = function() {
+ThreadGlobalPrototype.isRedundant = function() {
   return !this.isRoot && this.isDetached();
 };
 
@@ -252,7 +261,7 @@ ThreadGlobal.prototype.isRedundant = function() {
  * @return {Boolean}
  */
 
-ThreadGlobal.prototype.isDetached = function() {
+ThreadGlobalPrototype.isDetached = function() {
   return !this.connections.inbound;
 };
 

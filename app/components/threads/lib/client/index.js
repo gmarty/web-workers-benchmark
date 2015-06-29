@@ -71,6 +71,15 @@ function Client(service, options) {
 }
 
 /**
+ * Prototype assigned to variable
+ * to improve compression.
+ *
+ * @type {Object}
+ */
+
+var ClientPrototype = Client.prototype;
+
+/**
  * Attempt to connect the `Client`
  * with its service.
  *
@@ -78,7 +87,7 @@ function Client(service, options) {
  * @public
  */
 
-Client.prototype.connect = function() {
+ClientPrototype.connect = function() {
   if (this.connected) return this.connected;
   debug('connecting...');
   var self = this;
@@ -109,7 +118,7 @@ Client.prototype.connect = function() {
  * @return {Promise}
  */
 
-Client.prototype.connectViaThread = function() {
+ClientPrototype.connectViaThread = function() {
   debug('connecting via thread...');
   var self = this;
   return this.thread.getService(self.service.name)
@@ -155,7 +164,7 @@ Client.prototype.connectViaThread = function() {
  * @private
  */
 
-Client.prototype.connectViaManager = function() {
+ClientPrototype.connectViaManager = function() {
   debug('connecting via manager...');
   var onmessage = this.messenger.parse;
   manager.addEventListener('message', onmessage);
@@ -187,7 +196,7 @@ Client.prototype.connectViaManager = function() {
  * @return {Promise}
  */
 
-Client.prototype.disconnect = function() {
+ClientPrototype.disconnect = function() {
   debug('disconnect');
   if (!this.connected) return Promise.resolve();
   return this.request('disconnect', this.id)
@@ -213,7 +222,7 @@ Client.prototype.disconnect = function() {
  * @return {Promise}
  */
 
-Client.prototype.request = function(type, data) {
+ClientPrototype.request = function(type, data) {
   debug('request', type, data);
   return this.connect().then(function() {
     return this.messenger.request(this.service.channel, {
@@ -235,7 +244,7 @@ Client.prototype.request = function(type, data) {
  * @param  {Object} broadcast
  */
 
-Client.prototype.onbroadcast = function(broadcast) {
+ClientPrototype.onbroadcast = function(broadcast) {
   debug('on broadcast', broadcast);
   this.emit(broadcast.type, broadcast.data);
 };
@@ -254,7 +263,7 @@ Client.prototype.onbroadcast = function(broadcast) {
  * @public
  */
 
-Client.prototype.method = function(method) {
+ClientPrototype.method = function(method) {
   var args = [].slice.call(arguments, 1);
   debug('method', method, args);
   return this.request('method', {
@@ -277,7 +286,7 @@ Client.prototype.method = function(method) {
  * @public
  */
 
-Client.prototype.stream = function(method) {
+ClientPrototype.stream = function(method) {
   debug('stream', method, args);
   var args = [].slice.call(arguments, 1);
   var self = this;
@@ -321,7 +330,7 @@ Client.prototype.stream = function(method) {
  * @private
  */
 
-Client.prototype.onstreamevent = function(broadcast) {
+ClientPrototype.onstreamevent = function(broadcast) {
   var id = broadcast.id;
   var type = broadcast.type;
   var stream = this._activeStreams[id];

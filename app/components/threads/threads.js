@@ -76,12 +76,21 @@ function ChildThread(params) {
 }
 
 /**
+ * Prototype assigned to variable
+ * to improve compression.
+ *
+ * @type {Object}
+ */
+
+var ChildThreadPrototype = ChildThread.prototype;
+
+/**
  * Creates the actual target thread.
  *
  * @return {Worker|SharedWorker|HTMLIframeElement}
  */
 
-ChildThread.prototype.createTarget = function() {
+ChildThreadPrototype.createTarget = function() {
   debug('create process');
   switch(this.type) {
     case 'worker': return new Worker(this.src);
@@ -102,7 +111,7 @@ ChildThread.prototype.createTarget = function() {
  * @return {Object}
  */
 
-ChildThread.prototype.getService = function(name) {
+ChildThreadPrototype.getService = function(name) {
   debug('get service when ready...', name);
   return this.ready.then(function() {
     return this._getService(name);
@@ -126,7 +135,7 @@ ChildThread.prototype.getService = function(name) {
  * @return {Promise}
  */
 
-ChildThread.prototype._getService = function(name) {
+ChildThreadPrototype._getService = function(name) {
   debug('get service', name);
   var service = this.services[name];
 
@@ -174,7 +183,7 @@ ChildThread.prototype._getService = function(name) {
  * @return {Promise}
  */
 
-ChildThread.prototype.checkReady = function() {
+ChildThreadPrototype.checkReady = function() {
   debug('check ready');
   var deferred = utils.deferred();
   var called = 0;
@@ -203,7 +212,7 @@ ChildThread.prototype.checkReady = function() {
  * @private
  */
 
-ChildThread.prototype.postMessage = function(message) {
+ChildThreadPrototype.postMessage = function(message) {
   debug('post message', message);
   switch(this.type) {
     case 'worker': this.target.postMessage(message); break;
@@ -227,7 +236,7 @@ ChildThread.prototype.postMessage = function(message) {
  * @private
  */
 
-ChildThread.prototype.listen = function() {
+ChildThreadPrototype.listen = function() {
   debug('listen (%s)', this.type);
   switch(this.type) {
     case 'worker':
@@ -248,7 +257,7 @@ ChildThread.prototype.listen = function() {
  * @private
  */
 
-ChildThread.prototype.unlisten = function() {
+ChildThreadPrototype.unlisten = function() {
   switch(this.type) {
     case 'worker':
       this.target.removeEventListener('message', this.onmessage);
@@ -273,7 +282,7 @@ ChildThread.prototype.unlisten = function() {
  * @private
  */
 
-ChildThread.prototype.onmessage = function(e) {
+ChildThreadPrototype.onmessage = function(e) {
   if (!this.fromTarget(e)) return;
   debug('on message', e.data.data);
   this.messenger.parse(e);
@@ -287,7 +296,7 @@ ChildThread.prototype.onmessage = function(e) {
  * @return {Boolean}
  */
 
-ChildThread.prototype.fromTarget = function(e) {
+ChildThreadPrototype.fromTarget = function(e) {
   return e.target === this.target
     || this.target.contentWindow === e.source
     || e.target === this.target.port;
@@ -311,7 +320,7 @@ ChildThread.prototype.fromTarget = function(e) {
  * @param  {Object} service
  */
 
-ChildThread.prototype.onserviceready = function(service) {
+ChildThreadPrototype.onserviceready = function(service) {
   debug('on service ready', service);
   this.services[service.name] = service;
   this.emit('serviceready', service);
@@ -329,7 +338,7 @@ ChildThread.prototype.onserviceready = function(service) {
  * @private
  */
 
-ChildThread.prototype.onredundant = function() {
+ChildThreadPrototype.onredundant = function() {
   debug('redundant');
   this.emit('redundant');
 };
@@ -344,7 +353,7 @@ ChildThread.prototype.onredundant = function() {
  * @public
  */
 
-ChildThread.prototype.destroy = function() {
+ChildThreadPrototype.destroy = function() {
   this.unlisten();
   this.destroyTarget();
   this.off();
@@ -356,7 +365,7 @@ ChildThread.prototype.destroy = function() {
  * @private
  */
 
-ChildThread.prototype.destroyTarget = function() {
+ChildThreadPrototype.destroyTarget = function() {
   debug('destroy thread (%s)');
 
   switch(this.type) {
@@ -481,6 +490,15 @@ function Client(service, options) {
 }
 
 /**
+ * Prototype assigned to variable
+ * to improve compression.
+ *
+ * @type {Object}
+ */
+
+var ClientPrototype = Client.prototype;
+
+/**
  * Attempt to connect the `Client`
  * with its service.
  *
@@ -488,7 +506,7 @@ function Client(service, options) {
  * @public
  */
 
-Client.prototype.connect = function() {
+ClientPrototype.connect = function() {
   if (this.connected) return this.connected;
   debug('connecting...');
   var self = this;
@@ -519,7 +537,7 @@ Client.prototype.connect = function() {
  * @return {Promise}
  */
 
-Client.prototype.connectViaThread = function() {
+ClientPrototype.connectViaThread = function() {
   debug('connecting via thread...');
   var self = this;
   return this.thread.getService(self.service.name)
@@ -565,7 +583,7 @@ Client.prototype.connectViaThread = function() {
  * @private
  */
 
-Client.prototype.connectViaManager = function() {
+ClientPrototype.connectViaManager = function() {
   debug('connecting via manager...');
   var onmessage = this.messenger.parse;
   manager.addEventListener('message', onmessage);
@@ -597,7 +615,7 @@ Client.prototype.connectViaManager = function() {
  * @return {Promise}
  */
 
-Client.prototype.disconnect = function() {
+ClientPrototype.disconnect = function() {
   debug('disconnect');
   if (!this.connected) return Promise.resolve();
   return this.request('disconnect', this.id)
@@ -623,7 +641,7 @@ Client.prototype.disconnect = function() {
  * @return {Promise}
  */
 
-Client.prototype.request = function(type, data) {
+ClientPrototype.request = function(type, data) {
   debug('request', type, data);
   return this.connect().then(function() {
     return this.messenger.request(this.service.channel, {
@@ -645,7 +663,7 @@ Client.prototype.request = function(type, data) {
  * @param  {Object} broadcast
  */
 
-Client.prototype.onbroadcast = function(broadcast) {
+ClientPrototype.onbroadcast = function(broadcast) {
   debug('on broadcast', broadcast);
   this.emit(broadcast.type, broadcast.data);
 };
@@ -664,7 +682,7 @@ Client.prototype.onbroadcast = function(broadcast) {
  * @public
  */
 
-Client.prototype.method = function(method) {
+ClientPrototype.method = function(method) {
   var args = [].slice.call(arguments, 1);
   debug('method', method, args);
   return this.request('method', {
@@ -687,7 +705,7 @@ Client.prototype.method = function(method) {
  * @public
  */
 
-Client.prototype.stream = function(method) {
+ClientPrototype.stream = function(method) {
   debug('stream', method, args);
   var args = [].slice.call(arguments, 1);
   var self = this;
@@ -731,7 +749,7 @@ Client.prototype.stream = function(method) {
  * @private
  */
 
-Client.prototype.onstreamevent = function(broadcast) {
+ClientPrototype.onstreamevent = function(broadcast) {
   var id = broadcast.id;
   var type = broadcast.type;
   var stream = this._activeStreams[id];
@@ -780,6 +798,15 @@ function ClientStream(options) {
 }
 
 /**
+ * Prototype assigned to variable
+ * to improve compression.
+ *
+ * @type {Object}
+ */
+
+var ClientStreamPrototype = ClientStream.prototype;
+
+/**
  * Promise that will be "resolved" when
  * stream is closed with success, and
  * "rejected" when service aborts
@@ -788,7 +815,7 @@ function ClientStream(options) {
  * @type Promise
  */
 
-Object.defineProperty(ClientStream.prototype, 'closed', {
+Object.defineProperty(ClientStreamPrototype, 'closed', {
   get: function() { return this._.closed.promise; }
 });
 
@@ -800,7 +827,7 @@ Object.defineProperty(ClientStream.prototype, 'closed', {
  * @param {Function} callback
  */
 
-ClientStream.prototype.listen = function(callback) {
+ClientStreamPrototype.listen = function(callback) {
   debug('listen', callback);
   this._.emitter.on('write', callback);
 };
@@ -811,7 +838,7 @@ ClientStream.prototype.listen = function(callback) {
  * @param {Function} callback
  */
 
-ClientStream.prototype.unlisten = function(callback) {
+ClientStreamPrototype.unlisten = function(callback) {
   debug('unlisten', callback);
   this._.emitter.off('write', callback);
 };
@@ -823,7 +850,7 @@ ClientStream.prototype.unlisten = function(callback) {
  * @param {*} [reason] Optional data to be sent to service.
  */
 
-ClientStream.prototype.cancel = function(reason) {
+ClientStreamPrototype.cancel = function(reason) {
   debug('cancel', reason);
 
   var canceled = utils.deferred();
@@ -862,6 +889,15 @@ function ClientStreamPrivate(options) {
 }
 
 /**
+ * Prototype assigned to variable
+ * to improve compression.
+ *
+ * @type {Object}
+ */
+
+var ClientStreamPrivatePrototype = ClientStreamPrivate.prototype;
+
+/**
  * Used internally by Client when
  * it receives an 'abort' event
  * from the service.
@@ -869,7 +905,7 @@ function ClientStreamPrivate(options) {
  * @private
  */
 
-ClientStreamPrivate.prototype.abort = function(reason) {
+ClientStreamPrivatePrototype.abort = function(reason) {
   debug('abort', reason);
   this.closed.reject(reason);
 };
@@ -882,7 +918,7 @@ ClientStreamPrivate.prototype.abort = function(reason) {
  * @private
  */
 
-ClientStreamPrivate.prototype.close = function() {
+ClientStreamPrivatePrototype.close = function() {
   debug('close');
   this.closed.resolve();
 };
@@ -895,7 +931,7 @@ ClientStreamPrivate.prototype.close = function() {
  * @private
  */
 
-ClientStreamPrivate.prototype.write = function(data) {
+ClientStreamPrivatePrototype.write = function(data) {
   debug('write', data);
   this.emitter.emit('write', data);
 };
@@ -922,7 +958,17 @@ var debug = 0 ? console.log.bind(console, '[Emitter]') : function(){};
  *
  * @constructor
  */
+
 function Emitter() {}
+
+/**
+ * Prototype assigned to variable
+ * to improve compression.
+ *
+ * @type {Object}
+ */
+
+var EmitterPrototype = Emitter.prototype;
 
 /**
  * Add an event listener.
@@ -933,7 +979,8 @@ function Emitter() {}
  * @param  {Function} callback
  * @return {Emitter} for chaining
  */
-Emitter.prototype.on = function(type, callback) {
+
+EmitterPrototype.on = function(type, callback) {
   debug('on', type, callback);
   if (!this._callbacks) this._callbacks = {};
   if (!this._callbacks[type]) this._callbacks[type] = [];
@@ -954,7 +1001,8 @@ Emitter.prototype.on = function(type, callback) {
  * @param  {Function} callback (optional)
  * @return {Emitter} for chaining
  */
-Emitter.prototype.off = function(type, callback) {
+
+EmitterPrototype.off = function(type, callback) {
   debug('off', type, callback);
   if (this._callbacks) {
     switch (arguments.length) {
@@ -982,7 +1030,8 @@ Emitter.prototype.off = function(type, callback) {
  * @param  {*} data
  * @return {Emitter} for chaining
  */
-Emitter.prototype.emit = function(type, data) {
+
+EmitterPrototype.emit = function(type, data) {
   debug('emit', type, data);
   if (this._callbacks) {
     var fns = this._callbacks[type] || [];
@@ -1013,6 +1062,7 @@ module.exports = Manager;
  *
  * @type {Function}
  */
+
 var debug = 0 ? console.log.bind(console, '[Manager]') : function() {};
 
 /**
@@ -1020,6 +1070,7 @@ var debug = 0 ? console.log.bind(console, '[Manager]') : function() {};
  *
  * @type {BroadcastChannel}
  */
+
 var channel = new BroadcastChannel('threadsmanager');
 
 /**
@@ -1027,10 +1078,20 @@ var channel = new BroadcastChannel('threadsmanager');
  *
  * @param {Object} descriptors Service descriptors
  */
+
 function Manager(descriptors) {
   if (!(this instanceof Manager)) return new Manager(descriptors);
   this._ = new ManagerPrivate(descriptors);
 }
+
+/**
+ * Prototype assigned to variable
+ * to improve compression.
+ *
+ * @type {Object}
+ */
+
+var ManagerPrototype = Manager.prototype;
 
 /**
  * Destroy the manager and any
@@ -1038,7 +1099,8 @@ function Manager(descriptors) {
  *
  * @public
  */
-Manager.prototype.destroy = function() {
+
+ManagerPrototype.destroy = function() {
   this._.destroy();
 };
 
@@ -1047,6 +1109,7 @@ Manager.prototype.destroy = function() {
  *
  * @param {Object} descriptors
  */
+
 function ManagerPrivate(descriptors) {
   this.id = 'threadsmanager';
   this.registry = {};
@@ -1061,11 +1124,21 @@ function ManagerPrivate(descriptors) {
 }
 
 /**
+ * Prototype assigned to variable
+ * to improve compression.
+ *
+ * @type {Object}
+ */
+
+var ManagerPrivatePrototype = ManagerPrivate.prototype;
+
+/**
  * Destroy the `Manager`.
  *
  * @private
  */
-ManagerPrivate.prototype.destroy = function() {
+
+ManagerPrivatePrototype.destroy = function() {
   debug('destroy');
   if (this.destroyed) return;
   channel.removeEventListener('message', this.messenger.parse);
@@ -1080,7 +1153,8 @@ ManagerPrivate.prototype.destroy = function() {
  *
  * @private
  */
-ManagerPrivate.prototype.destroyThreads = function() {
+
+ManagerPrivatePrototype.destroyThreads = function() {
   debug('destroy threads');
   for (var src in this.threads) this.destroyThread(this.threads[src]);
 };
@@ -1091,7 +1165,8 @@ ManagerPrivate.prototype.destroyThreads = function() {
  * @param  {Object} descriptors
  * @private
  */
-ManagerPrivate.prototype.register = function(descriptors) {
+
+ManagerPrivatePrototype.register = function(descriptors) {
   debug('register', descriptors);
   for (var name in descriptors) {
     descriptors[name].name = name;
@@ -1109,7 +1184,8 @@ ManagerPrivate.prototype.register = function(descriptors) {
  * @param  {Object} data {service,client,contract}
  * @private
  */
-ManagerPrivate.prototype.onconnect = function(request) {
+
+ManagerPrivatePrototype.onconnect = function(request) {
   debug('on connect');
   var data = request.data;
   var descriptor = this.registry[data.service];
@@ -1137,7 +1213,8 @@ ManagerPrivate.prototype.onconnect = function(request) {
  * @param  {Object} contract (optional)
  * @return {Promise}
  */
-ManagerPrivate.prototype.connect = function(client, service, contract) {
+
+ManagerPrivatePrototype.connect = function(client, service, contract) {
   debug('connect', service, client, contract);
   return this.messenger.request(channel, {
     type: 'connect',
@@ -1158,7 +1235,8 @@ ManagerPrivate.prototype.connect = function(client, service, contract) {
  * @param  {Object} descriptor  Service descriptor
  * @return {ChildThread}
  */
-ManagerPrivate.prototype.getThread = function(descriptor) {
+
+ManagerPrivatePrototype.getThread = function(descriptor) {
   debug('get thread', descriptor);
   var thread = this.threads[descriptor.src];
   return thread || this.createThread(descriptor);
@@ -1171,7 +1249,8 @@ ManagerPrivate.prototype.getThread = function(descriptor) {
  * @param  {Object} descriptor
  * @return {ChildThread}
  */
-ManagerPrivate.prototype.createThread = function(descriptor) {
+
+ManagerPrivatePrototype.createThread = function(descriptor) {
   debug('create thread', descriptor);
   var thread = new ChildThread(descriptor);
   var self = this;
@@ -1190,7 +1269,8 @@ ManagerPrivate.prototype.createThread = function(descriptor) {
  *
  * @param  {ChildThread} thread
  */
-ManagerPrivate.prototype.destroyThread = function(thread) {
+
+ManagerPrivatePrototype.destroyThread = function(thread) {
   debug('destroy thread');
   thread.destroy();
   delete this.threads[thread.src];
@@ -1245,6 +1325,15 @@ function Messenger(id, name) {
 }
 
 /**
+ * Prototype assigned to variable
+ * to improve compression.
+ *
+ * @type {Object}
+ */
+
+var MessengerPrototype = Messenger.prototype;
+
+/**
  * Register a handler for a message type.
  *
  * NOTE: Only one handler per message type allowed.
@@ -1255,7 +1344,7 @@ function Messenger(id, name) {
  * @return {Messenger} for chaining
  */
 
-Messenger.prototype.handle = function(type, fn, ctx) {
+MessengerPrototype.handle = function(type, fn, ctx) {
   this.handlers[type] = { fn: fn, ctx: ctx };
   return this;
 };
@@ -1270,7 +1359,7 @@ Messenger.prototype.handle = function(type, fn, ctx) {
  * @return {Messenger} for chaining
  */
 
-Messenger.prototype.unhandle = function(type) {
+MessengerPrototype.unhandle = function(type) {
   delete this.handlers[type];
   return this;
 };
@@ -1288,7 +1377,7 @@ Messenger.prototype.unhandle = function(type) {
  * @public
  */
 
-Messenger.prototype.parse = function(e) {
+MessengerPrototype.parse = function(e) {
   var message = e.data;
 
   if (!this.isRecipient(message)) return;
@@ -1316,7 +1405,7 @@ Messenger.prototype.parse = function(e) {
  * @return {Promise}
  */
 
-Messenger.prototype.request = function(channel, params) {
+MessengerPrototype.request = function(channel, params) {
   debug('request', this.name, params);
   var deferred = utils.deferred();
   var id = utils.uuid();
@@ -1345,7 +1434,7 @@ Messenger.prototype.request = function(channel, params) {
  * @param  {Object} params  {recipient,type,data}
  */
 
-Messenger.prototype.push = function(channel, params) {
+MessengerPrototype.push = function(channel, params) {
   debug('push', channel, params);
   send(channel, {
     type: 'push',
@@ -1373,7 +1462,7 @@ Messenger.prototype.push = function(channel, params) {
  * @private
  */
 
-Messenger.prototype.onrequest = function(e) {
+MessengerPrototype.onrequest = function(e) {
   debug('on request', e);
   var request = new Request(e);
   var handler = this.handlers[request.type];
@@ -1400,7 +1489,7 @@ Messenger.prototype.onrequest = function(e) {
  * @private
  */
 
-Messenger.prototype.onresponse = function(e) {
+MessengerPrototype.onresponse = function(e) {
   debug('on response', this.name, response);
   var message = e.data;
   var response = message.data;
@@ -1449,7 +1538,7 @@ Messenger.prototype.onresponse = function(e) {
  * @param  {Event} e Raw message event
  */
 
-Messenger.prototype.onpush = function(e) {
+MessengerPrototype.onpush = function(e) {
   var message = e.data;
   var push = message.data;
   debug('on push', push);
@@ -1465,7 +1554,7 @@ Messenger.prototype.onpush = function(e) {
  * @return {Boolean}
  */
 
-Messenger.prototype.isRecipient = function(message) {
+MessengerPrototype.isRecipient = function(message) {
   var recipient = message.recipient;
   return recipient === this.id || recipient === '*';
 };
@@ -1478,7 +1567,7 @@ Messenger.prototype.isRecipient = function(message) {
  * @param  {Object} message
  */
 
-Messenger.prototype.read = function(message) {
+MessengerPrototype.read = function(message) {
   this.history.push(message.id);
   this.history.shift();
 };
@@ -1490,7 +1579,7 @@ Messenger.prototype.read = function(message) {
  * @return {Boolean}
  */
 
-Messenger.prototype.hasRead = function(message) {
+MessengerPrototype.hasRead = function(message) {
   return !!~this.history.indexOf(message.id);
 };
 
@@ -1661,6 +1750,15 @@ function Service(name) {
 }
 
 /**
+ * Prototype assigned to variable
+ * to improve compression.
+ *
+ * @type {Object}
+ */
+
+var ServicePrototype = Service.prototype;
+
+/**
  * Register a method that will be
  * exposed to all the clients.
  *
@@ -1668,7 +1766,7 @@ function Service(name) {
  * @param {Function} fn Implementation
  */
 
-Service.prototype.method = function(name, fn) {
+ServicePrototype.method = function(name, fn) {
   this.private.addMethod(name, fn);
   return this;
 };
@@ -1680,7 +1778,7 @@ Service.prototype.method = function(name, fn) {
  * @param {Function} fn Implementation
  */
 
-Service.prototype.stream = function(name, fn) {
+ServicePrototype.stream = function(name, fn) {
   this.private.addStream(name, fn);
   return this;
 };
@@ -1692,7 +1790,7 @@ Service.prototype.stream = function(name, fn) {
  * @param {Object} contract
  */
 
-Service.prototype.contract = function(contract) {
+ServicePrototype.contract = function(contract) {
   this.private.setContract(contract);
   return this;
 };
@@ -1704,7 +1802,7 @@ Service.prototype.contract = function(contract) {
  * @param {*} data Payload to be transmitted.
  */
 
-Service.prototype.broadcast = function(type, data, clients) {
+ServicePrototype.broadcast = function(type, data, clients) {
   this.private.broadcast(type, data, clients);
   return this;
 };
@@ -1738,16 +1836,17 @@ function ServicePrivate(service) {
     .handle('disconnect', this.ondisconnect, this);
 
   this.listen();
-
-  // Don't declare service ready until
-  // any pending tasks in the event-loop
-  // have completed. Namely any pending
-  // 'connect' events for `SharedWorkers`.
-  // If we broadcast the 'serviceready'
-  // event before the thread-parent has
-  // 'connected', it won't be heard.
-  setTimeout(this.ready.bind(this));
+  this.ready();
 }
+
+/**
+ * Prototype assigned to variable
+ * to improve compression.
+ *
+ * @type {Object}
+ */
+
+var ServicePrivatePrototype = ServicePrivate.prototype;
 
 /**
  * Called when a client calls
@@ -1757,7 +1856,7 @@ function ServicePrivate(service) {
  * @return {*}
  */
 
-ServicePrivate.prototype.onmethod = function(request) {
+ServicePrivatePrototype.onmethod = function(request) {
   debug('method', request.data);
   var method = request.data;
   var fn = this.methods[method.name];
@@ -1776,7 +1875,7 @@ ServicePrivate.prototype.onmethod = function(request) {
  * @param {Object} request Request object
  */
 
-ServicePrivate.prototype.onstream = function(request) {
+ServicePrivatePrototype.onstream = function(request) {
   debug('stream', request.data);
   var data = request.data;
   var fn = this.streams[data.name];
@@ -1812,7 +1911,7 @@ ServicePrivate.prototype.onstream = function(request) {
  * @private
  */
 
-ServicePrivate.prototype.onstreamcancel = function(request) {
+ServicePrivatePrototype.onstreamcancel = function(request) {
   var data = request.data;
   var id = data.id;
   var stream = this.activeStreams[id];
@@ -1831,7 +1930,7 @@ ServicePrivate.prototype.onstreamcancel = function(request) {
  * @private
  */
 
-ServicePrivate.prototype.ready = function() {
+ServicePrivatePrototype.ready = function() {
   debug('ready');
   thread.serviceReady(this);
 };
@@ -1850,7 +1949,7 @@ ServicePrivate.prototype.ready = function() {
  * @param  {Object} data
  */
 
-ServicePrivate.prototype.onconnect = function(request) {
+ServicePrivatePrototype.onconnect = function(request) {
   var data = request.data;
   var client = data.client;
   var contract = data.contract;
@@ -1885,7 +1984,7 @@ ServicePrivate.prototype.onconnect = function(request) {
  * @param  {Request} request
  */
 
-ServicePrivate.prototype.ondisconnect = function(request) {
+ServicePrivatePrototype.ondisconnect = function(request) {
   var client = request.data;
 
   // Check `Client` is known
@@ -1909,7 +2008,7 @@ ServicePrivate.prototype.ondisconnect = function(request) {
   }.bind(this));
 };
 
-ServicePrivate.prototype.setContract = function(contract) {
+ServicePrivatePrototype.setContract = function(contract) {
   if (!contract) return;
   this.contract = contract;
   debug('contract set', contract);
@@ -1928,7 +2027,7 @@ ServicePrivate.prototype.setContract = function(contract) {
  * @param {Function} fn
  */
 
-ServicePrivate.prototype.addMethod = function(name, fn) {
+ServicePrivatePrototype.addMethod = function(name, fn) {
   this.methods[name] = fn;
 };
 
@@ -1940,7 +2039,7 @@ ServicePrivate.prototype.addMethod = function(name, fn) {
  * @param {Function} fn
  */
 
-ServicePrivate.prototype.addStream = function(name, fn) {
+ServicePrivatePrototype.addStream = function(name, fn) {
   this.streams[name] = fn;
 };
 
@@ -1954,7 +2053,7 @@ ServicePrivate.prototype.addStream = function(name, fn) {
  * @param  {Object} method
  */
 
-ServicePrivate.prototype.checkMethodCall = function(method) {
+ServicePrivatePrototype.checkMethodCall = function(method) {
   debug('check method call', method);
 
   var name = method.name;
@@ -1982,7 +2081,7 @@ ServicePrivate.prototype.checkMethodCall = function(method) {
  * @private
  */
 
-ServicePrivate.prototype.listen = function() {
+ServicePrivatePrototype.listen = function() {
   manager.addEventListener('message', this.messenger.parse);
   thread.on('message', this.messenger.parse);
 };
@@ -1996,7 +2095,7 @@ ServicePrivate.prototype.listen = function() {
  * @param  {Array} (optional) array of client-ids to target
  */
 
-ServicePrivate.prototype.broadcast = function(type, data, clients) {
+ServicePrivatePrototype.broadcast = function(type, data, clients) {
   debug('broadcast', type, data);
   for (var client in this.channels) {
     if (clients && !~clients.indexOf(client)) continue;
@@ -2063,8 +2162,17 @@ var debug = 0 ? console.log.bind(console, '[ServiceStream]') : function() {};
  */
 
 function ServiceStream(options) {
-  this._ = new PrivateServiceStream(this, options);
+  this._ = new ServiceStreamPrivate(this, options);
 }
+
+/**
+ * Prototype assigned to variable
+ * to improve compression.
+ *
+ * @type {Object}
+ */
+
+var ServiceStreamPrototype = ServiceStream.prototype;
 
 /**
  * Services that allows clients to
@@ -2076,7 +2184,7 @@ function ServiceStream(options) {
  * @returns {(Promise|*)}
  */
 
-ServiceStream.prototype.cancel = function(reason) {
+ServiceStreamPrototype.cancel = function(reason) {
   var err = new TypeError('service should implement stream.cancel()');
   return Promise.reject(err);
 };
@@ -2091,7 +2199,7 @@ ServiceStream.prototype.cancel = function(reason) {
  * @returns {Promise}
  */
 
-ServiceStream.prototype.abort = function(data) {
+ServiceStreamPrototype.abort = function(data) {
   debug('abort', data);
   return this._.post('abort', 'aborted', data);
 };
@@ -2103,7 +2211,7 @@ ServiceStream.prototype.abort = function(data) {
  * @returns {Promise}
  */
 
-ServiceStream.prototype.write = function(data) {
+ServiceStreamPrototype.write = function(data) {
   debug('write', data);
   return this._.post('write', 'writable', data);
 };
@@ -2118,7 +2226,7 @@ ServiceStream.prototype.write = function(data) {
  * @returns {Promise}
  */
 
-ServiceStream.prototype.close = function() {
+ServiceStreamPrototype.close = function() {
   debug('close');
   return this._.post('close', 'closed');
 };
@@ -2131,7 +2239,7 @@ ServiceStream.prototype.close = function() {
  * @private
  */
 
-function PrivateServiceStream(target, options) {
+function ServiceStreamPrivate(target, options) {
   this.target = target;
   this.id = options.id;
   this.channel = options.channel;
@@ -2140,6 +2248,15 @@ function PrivateServiceStream(target, options) {
   this.messenger = new Messenger(options.serviceId, '[ServiceStream]');
   debug('initialized', target, options);
 }
+
+/**
+ * Prototype assigned to variable
+ * to improve compression.
+ *
+ * @type {Object}
+ */
+
+var ServiceStreamPrivatePrototype = ServiceStreamPrivate.prototype;
 
 /**
  * Validate the internal state to avoid
@@ -2156,7 +2273,7 @@ function PrivateServiceStream(target, options) {
  * @private
  */
 
-PrivateServiceStream.prototype.validateState = function(actionName, state) {
+ServiceStreamPrivatePrototype.validateState = function(actionName, state) {
   if (this.state !== 'writable') {
     var msg = 'Can\'t ' + actionName + ' on current state: ' + this.state;
     return Promise.reject(new TypeError(msg));
@@ -2178,7 +2295,7 @@ PrivateServiceStream.prototype.validateState = function(actionName, state) {
  * @private
  */
 
-PrivateServiceStream.prototype.cancel = function(reason) {
+ServiceStreamPrivatePrototype.cancel = function(reason) {
   return this.validateState('cancel', 'canceled').then(function() {
     return this.target.cancel(reason);
   }.bind(this));
@@ -2194,7 +2311,7 @@ PrivateServiceStream.prototype.cancel = function(reason) {
  * @private
  */
 
-PrivateServiceStream.prototype.post = function(type, state, data) {
+ServiceStreamPrivatePrototype.post = function(type, state, data) {
   debug('post', type, state, data);
   return this.validateState(type, state).then(function() {
     debug('validated', this.channel);
@@ -2264,12 +2381,21 @@ function ThreadGlobal() {
 }
 
 /**
+ * Prototype assigned to variable
+ * to improve compression.
+ *
+ * @type {Object}
+ */
+
+var ThreadGlobalPrototype = ThreadGlobal.prototype;
+
+/**
  * Listens for incoming messages.
  *
  * @private
  */
 
-ThreadGlobal.prototype.listen = function() {
+ThreadGlobalPrototype.listen = function() {
   debug('listen');
   switch (this.type) {
     case 'sharedworker':
@@ -2294,7 +2420,7 @@ ThreadGlobal.prototype.listen = function() {
  * @private
  */
 
-ThreadGlobal.prototype.ready = function() {
+ThreadGlobalPrototype.ready = function() {
   if (this.isRoot) return;
   debug('ready', this.id);
   this.messenger.push(this, {
@@ -2310,7 +2436,7 @@ ThreadGlobal.prototype.ready = function() {
  * @private
  */
 
-ThreadGlobal.prototype.onPing = function(request) {
+ThreadGlobalPrototype.onPing = function(request) {
   debug('on ping');
   request.respond(this.serialize());
 };
@@ -2321,7 +2447,7 @@ ThreadGlobal.prototype.onPing = function(request) {
  * @return {Object}
  */
 
-ThreadGlobal.prototype.serialize = function() {
+ThreadGlobalPrototype.serialize = function() {
   return {
     id: this.id,
     services: this.services
@@ -2345,7 +2471,7 @@ ThreadGlobal.prototype.serialize = function() {
  * @private
  */
 
-ThreadGlobal.prototype.onmessage = function(e) {
+ThreadGlobalPrototype.onmessage = function(e) {
   debug('on message', e);
   this.messenger.parse(e);
   this.emit('message', e);
@@ -2363,7 +2489,7 @@ ThreadGlobal.prototype.onmessage = function(e) {
  * @param  {Service} service
  */
 
-ThreadGlobal.prototype.serviceReady = function(service) {
+ThreadGlobalPrototype.serviceReady = function(service) {
   debug('service ready', service);
   if (this.services[service.name]) throw error(2, service.name);
 
@@ -2393,7 +2519,7 @@ ThreadGlobal.prototype.serviceReady = function(service) {
  * @public
  */
 
-ThreadGlobal.prototype.postMessage = function(message) {
+ThreadGlobalPrototype.postMessage = function(message) {
   debug('postMessage (%s)', this.type, message);
   switch (this.type) {
     case 'worker':
@@ -2412,7 +2538,7 @@ ThreadGlobal.prototype.postMessage = function(message) {
  * @param  {String} type  ['incoming','outgoing']
  */
 
-ThreadGlobal.prototype.connection = function(type) {
+ThreadGlobalPrototype.connection = function(type) {
   if (!(type in this.connections)) throw error(1, type);
   this.connections[type]++;
   debug('connection', type, this.connections[type]);
@@ -2425,7 +2551,7 @@ ThreadGlobal.prototype.connection = function(type) {
  * @param  {String} type  ['incoming','outgoing']
  */
 
-ThreadGlobal.prototype.disconnection = function(type) {
+ThreadGlobalPrototype.disconnection = function(type) {
   if (!(type in this.connections)) throw error(1, type);
   this.connections[type]--;
   debug('disconnection', type, this.connections[type]);
@@ -2440,7 +2566,7 @@ ThreadGlobal.prototype.disconnection = function(type) {
  * @private
  */
 
-ThreadGlobal.prototype.check = function() {
+ThreadGlobalPrototype.check = function() {
   if (this.isRedundant()) {
     debug('redundant');
     this.messenger.push(this, { type: 'redundant' });
@@ -2454,7 +2580,7 @@ ThreadGlobal.prototype.check = function() {
  * @return {Boolean}
  */
 
-ThreadGlobal.prototype.isRedundant = function() {
+ThreadGlobalPrototype.isRedundant = function() {
   return !this.isRoot && this.isDetached();
 };
 
@@ -2465,7 +2591,7 @@ ThreadGlobal.prototype.isRedundant = function() {
  * @return {Boolean}
  */
 
-ThreadGlobal.prototype.isDetached = function() {
+ThreadGlobalPrototype.isDetached = function() {
   return !this.connections.inbound;
 };
 
@@ -2522,20 +2648,25 @@ module.exports = new ThreadGlobal();
 /**
  * Create a UUID string.
  *
+ * http://jsperf.com/guid-generation-stackoverflow
+ *
  * @return {String}
  */
 
-exports.uuid = function (){
-  var timestamp = Date.now();
-  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(
-    /[xy]/g,
-    function onEachCharacter(c) {
-      var r = (timestamp + Math.random() * 16) % 16 | 0;
-      timestamp = Math.floor(timestamp / 16);
-      return (c == 'x' ? r : (r&0x7|0x8)).toString(16);
-    }
-  );
-};
+exports.uuid = (function (){
+  var l = [];
+  for (var i=0; i<256; i++) { l[i] = (i<16?'0':'')+(i).toString(16); }
+  return function () {
+    var d0 = Math.random()*0xffffffff|0;
+    var d1 = Math.random()*0xffffffff|0;
+    var d2 = Math.random()*0xffffffff|0;
+    var d3 = Math.random()*0xffffffff|0;
+    return l[d0&0xff]+l[d0>>8&0xff]+l[d0>>16&0xff]+l[d0>>24&0xff]+'-'+
+      l[d1&0xff]+l[d1>>8&0xff]+'-'+l[d1>>16&0x0f|0x40]+l[d1>>24&0xff]+'-'+
+      l[d2&0x3f|0x80]+l[d2>>8&0xff]+'-'+l[d2>>16&0xff]+l[d2>>24&0xff]+
+      l[d3&0xff]+l[d3>>8&0xff]+l[d3>>16&0xff]+l[d3>>24&0xff];
+  };
+})();
 
 /**
  * Check that the given arguments

@@ -46,6 +46,15 @@ function Messenger(id, name) {
 }
 
 /**
+ * Prototype assigned to variable
+ * to improve compression.
+ *
+ * @type {Object}
+ */
+
+var MessengerPrototype = Messenger.prototype;
+
+/**
  * Register a handler for a message type.
  *
  * NOTE: Only one handler per message type allowed.
@@ -56,7 +65,7 @@ function Messenger(id, name) {
  * @return {Messenger} for chaining
  */
 
-Messenger.prototype.handle = function(type, fn, ctx) {
+MessengerPrototype.handle = function(type, fn, ctx) {
   this.handlers[type] = { fn: fn, ctx: ctx };
   return this;
 };
@@ -71,7 +80,7 @@ Messenger.prototype.handle = function(type, fn, ctx) {
  * @return {Messenger} for chaining
  */
 
-Messenger.prototype.unhandle = function(type) {
+MessengerPrototype.unhandle = function(type) {
   delete this.handlers[type];
   return this;
 };
@@ -89,7 +98,7 @@ Messenger.prototype.unhandle = function(type) {
  * @public
  */
 
-Messenger.prototype.parse = function(e) {
+MessengerPrototype.parse = function(e) {
   var message = e.data;
 
   if (!this.isRecipient(message)) return;
@@ -117,7 +126,7 @@ Messenger.prototype.parse = function(e) {
  * @return {Promise}
  */
 
-Messenger.prototype.request = function(channel, params) {
+MessengerPrototype.request = function(channel, params) {
   debug('request', this.name, params);
   var deferred = utils.deferred();
   var id = utils.uuid();
@@ -146,7 +155,7 @@ Messenger.prototype.request = function(channel, params) {
  * @param  {Object} params  {recipient,type,data}
  */
 
-Messenger.prototype.push = function(channel, params) {
+MessengerPrototype.push = function(channel, params) {
   debug('push', channel, params);
   send(channel, {
     type: 'push',
@@ -174,7 +183,7 @@ Messenger.prototype.push = function(channel, params) {
  * @private
  */
 
-Messenger.prototype.onrequest = function(e) {
+MessengerPrototype.onrequest = function(e) {
   debug('on request', e);
   var request = new Request(e);
   var handler = this.handlers[request.type];
@@ -201,7 +210,7 @@ Messenger.prototype.onrequest = function(e) {
  * @private
  */
 
-Messenger.prototype.onresponse = function(e) {
+MessengerPrototype.onresponse = function(e) {
   debug('on response', this.name, response);
   var message = e.data;
   var response = message.data;
@@ -250,7 +259,7 @@ Messenger.prototype.onresponse = function(e) {
  * @param  {Event} e Raw message event
  */
 
-Messenger.prototype.onpush = function(e) {
+MessengerPrototype.onpush = function(e) {
   var message = e.data;
   var push = message.data;
   debug('on push', push);
@@ -266,7 +275,7 @@ Messenger.prototype.onpush = function(e) {
  * @return {Boolean}
  */
 
-Messenger.prototype.isRecipient = function(message) {
+MessengerPrototype.isRecipient = function(message) {
   var recipient = message.recipient;
   return recipient === this.id || recipient === '*';
 };
@@ -279,7 +288,7 @@ Messenger.prototype.isRecipient = function(message) {
  * @param  {Object} message
  */
 
-Messenger.prototype.read = function(message) {
+MessengerPrototype.read = function(message) {
   this.history.push(message.id);
   this.history.shift();
 };
@@ -291,7 +300,7 @@ Messenger.prototype.read = function(message) {
  * @return {Boolean}
  */
 
-Messenger.prototype.hasRead = function(message) {
+MessengerPrototype.hasRead = function(message) {
   return !!~this.history.indexOf(message.id);
 };
 

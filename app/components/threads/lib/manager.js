@@ -18,6 +18,7 @@ module.exports = Manager;
  *
  * @type {Function}
  */
+
 var debug = 0 ? console.log.bind(console, '[Manager]') : function() {};
 
 /**
@@ -25,6 +26,7 @@ var debug = 0 ? console.log.bind(console, '[Manager]') : function() {};
  *
  * @type {BroadcastChannel}
  */
+
 var channel = new BroadcastChannel('threadsmanager');
 
 /**
@@ -32,10 +34,20 @@ var channel = new BroadcastChannel('threadsmanager');
  *
  * @param {Object} descriptors Service descriptors
  */
+
 function Manager(descriptors) {
   if (!(this instanceof Manager)) return new Manager(descriptors);
   this._ = new ManagerPrivate(descriptors);
 }
+
+/**
+ * Prototype assigned to variable
+ * to improve compression.
+ *
+ * @type {Object}
+ */
+
+var ManagerPrototype = Manager.prototype;
 
 /**
  * Destroy the manager and any
@@ -43,7 +55,8 @@ function Manager(descriptors) {
  *
  * @public
  */
-Manager.prototype.destroy = function() {
+
+ManagerPrototype.destroy = function() {
   this._.destroy();
 };
 
@@ -52,6 +65,7 @@ Manager.prototype.destroy = function() {
  *
  * @param {Object} descriptors
  */
+
 function ManagerPrivate(descriptors) {
   this.id = 'threadsmanager';
   this.registry = {};
@@ -66,11 +80,21 @@ function ManagerPrivate(descriptors) {
 }
 
 /**
+ * Prototype assigned to variable
+ * to improve compression.
+ *
+ * @type {Object}
+ */
+
+var ManagerPrivatePrototype = ManagerPrivate.prototype;
+
+/**
  * Destroy the `Manager`.
  *
  * @private
  */
-ManagerPrivate.prototype.destroy = function() {
+
+ManagerPrivatePrototype.destroy = function() {
   debug('destroy');
   if (this.destroyed) return;
   channel.removeEventListener('message', this.messenger.parse);
@@ -85,7 +109,8 @@ ManagerPrivate.prototype.destroy = function() {
  *
  * @private
  */
-ManagerPrivate.prototype.destroyThreads = function() {
+
+ManagerPrivatePrototype.destroyThreads = function() {
   debug('destroy threads');
   for (var src in this.threads) this.destroyThread(this.threads[src]);
 };
@@ -96,7 +121,8 @@ ManagerPrivate.prototype.destroyThreads = function() {
  * @param  {Object} descriptors
  * @private
  */
-ManagerPrivate.prototype.register = function(descriptors) {
+
+ManagerPrivatePrototype.register = function(descriptors) {
   debug('register', descriptors);
   for (var name in descriptors) {
     descriptors[name].name = name;
@@ -114,7 +140,8 @@ ManagerPrivate.prototype.register = function(descriptors) {
  * @param  {Object} data {service,client,contract}
  * @private
  */
-ManagerPrivate.prototype.onconnect = function(request) {
+
+ManagerPrivatePrototype.onconnect = function(request) {
   debug('on connect');
   var data = request.data;
   var descriptor = this.registry[data.service];
@@ -142,7 +169,8 @@ ManagerPrivate.prototype.onconnect = function(request) {
  * @param  {Object} contract (optional)
  * @return {Promise}
  */
-ManagerPrivate.prototype.connect = function(client, service, contract) {
+
+ManagerPrivatePrototype.connect = function(client, service, contract) {
   debug('connect', service, client, contract);
   return this.messenger.request(channel, {
     type: 'connect',
@@ -163,7 +191,8 @@ ManagerPrivate.prototype.connect = function(client, service, contract) {
  * @param  {Object} descriptor  Service descriptor
  * @return {ChildThread}
  */
-ManagerPrivate.prototype.getThread = function(descriptor) {
+
+ManagerPrivatePrototype.getThread = function(descriptor) {
   debug('get thread', descriptor);
   var thread = this.threads[descriptor.src];
   return thread || this.createThread(descriptor);
@@ -176,7 +205,8 @@ ManagerPrivate.prototype.getThread = function(descriptor) {
  * @param  {Object} descriptor
  * @return {ChildThread}
  */
-ManagerPrivate.prototype.createThread = function(descriptor) {
+
+ManagerPrivatePrototype.createThread = function(descriptor) {
   debug('create thread', descriptor);
   var thread = new ChildThread(descriptor);
   var self = this;
@@ -195,7 +225,8 @@ ManagerPrivate.prototype.createThread = function(descriptor) {
  *
  * @param  {ChildThread} thread
  */
-ManagerPrivate.prototype.destroyThread = function(thread) {
+
+ManagerPrivatePrototype.destroyThread = function(thread) {
   debug('destroy thread');
   thread.destroy();
   delete this.threads[thread.src];

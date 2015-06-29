@@ -19,7 +19,17 @@ var debug = 0 ? console.log.bind(console, '[Emitter]') : function(){};
  *
  * @constructor
  */
+
 function Emitter() {}
+
+/**
+ * Prototype assigned to variable
+ * to improve compression.
+ *
+ * @type {Object}
+ */
+
+var EmitterPrototype = Emitter.prototype;
 
 /**
  * Add an event listener.
@@ -30,7 +40,8 @@ function Emitter() {}
  * @param  {Function} callback
  * @return {Emitter} for chaining
  */
-Emitter.prototype.on = function(type, callback) {
+
+EmitterPrototype.on = function(type, callback) {
   debug('on', type, callback);
   if (!this._callbacks) this._callbacks = {};
   if (!this._callbacks[type]) this._callbacks[type] = [];
@@ -51,7 +62,8 @@ Emitter.prototype.on = function(type, callback) {
  * @param  {Function} callback (optional)
  * @return {Emitter} for chaining
  */
-Emitter.prototype.off = function(type, callback) {
+
+EmitterPrototype.off = function(type, callback) {
   debug('off', type, callback);
   if (this._callbacks) {
     switch (arguments.length) {
@@ -79,7 +91,8 @@ Emitter.prototype.off = function(type, callback) {
  * @param  {*} data
  * @return {Emitter} for chaining
  */
-Emitter.prototype.emit = function(type, data) {
+
+EmitterPrototype.emit = function(type, data) {
   debug('emit', type, data);
   if (this._callbacks) {
     var fns = this._callbacks[type] || [];

@@ -66,12 +66,21 @@ function ChildThread(params) {
 }
 
 /**
+ * Prototype assigned to variable
+ * to improve compression.
+ *
+ * @type {Object}
+ */
+
+var ChildThreadPrototype = ChildThread.prototype;
+
+/**
  * Creates the actual target thread.
  *
  * @return {Worker|SharedWorker|HTMLIframeElement}
  */
 
-ChildThread.prototype.createTarget = function() {
+ChildThreadPrototype.createTarget = function() {
   debug('create process');
   switch(this.type) {
     case 'worker': return new Worker(this.src);
@@ -92,7 +101,7 @@ ChildThread.prototype.createTarget = function() {
  * @return {Object}
  */
 
-ChildThread.prototype.getService = function(name) {
+ChildThreadPrototype.getService = function(name) {
   debug('get service when ready...', name);
   return this.ready.then(function() {
     return this._getService(name);
@@ -116,7 +125,7 @@ ChildThread.prototype.getService = function(name) {
  * @return {Promise}
  */
 
-ChildThread.prototype._getService = function(name) {
+ChildThreadPrototype._getService = function(name) {
   debug('get service', name);
   var service = this.services[name];
 
@@ -164,7 +173,7 @@ ChildThread.prototype._getService = function(name) {
  * @return {Promise}
  */
 
-ChildThread.prototype.checkReady = function() {
+ChildThreadPrototype.checkReady = function() {
   debug('check ready');
   var deferred = utils.deferred();
   var called = 0;
@@ -193,7 +202,7 @@ ChildThread.prototype.checkReady = function() {
  * @private
  */
 
-ChildThread.prototype.postMessage = function(message) {
+ChildThreadPrototype.postMessage = function(message) {
   debug('post message', message);
   switch(this.type) {
     case 'worker': this.target.postMessage(message); break;
@@ -217,7 +226,7 @@ ChildThread.prototype.postMessage = function(message) {
  * @private
  */
 
-ChildThread.prototype.listen = function() {
+ChildThreadPrototype.listen = function() {
   debug('listen (%s)', this.type);
   switch(this.type) {
     case 'worker':
@@ -238,7 +247,7 @@ ChildThread.prototype.listen = function() {
  * @private
  */
 
-ChildThread.prototype.unlisten = function() {
+ChildThreadPrototype.unlisten = function() {
   switch(this.type) {
     case 'worker':
       this.target.removeEventListener('message', this.onmessage);
@@ -263,7 +272,7 @@ ChildThread.prototype.unlisten = function() {
  * @private
  */
 
-ChildThread.prototype.onmessage = function(e) {
+ChildThreadPrototype.onmessage = function(e) {
   if (!this.fromTarget(e)) return;
   debug('on message', e.data.data);
   this.messenger.parse(e);
@@ -277,7 +286,7 @@ ChildThread.prototype.onmessage = function(e) {
  * @return {Boolean}
  */
 
-ChildThread.prototype.fromTarget = function(e) {
+ChildThreadPrototype.fromTarget = function(e) {
   return e.target === this.target
     || this.target.contentWindow === e.source
     || e.target === this.target.port;
@@ -301,7 +310,7 @@ ChildThread.prototype.fromTarget = function(e) {
  * @param  {Object} service
  */
 
-ChildThread.prototype.onserviceready = function(service) {
+ChildThreadPrototype.onserviceready = function(service) {
   debug('on service ready', service);
   this.services[service.name] = service;
   this.emit('serviceready', service);
@@ -319,7 +328,7 @@ ChildThread.prototype.onserviceready = function(service) {
  * @private
  */
 
-ChildThread.prototype.onredundant = function() {
+ChildThreadPrototype.onredundant = function() {
   debug('redundant');
   this.emit('redundant');
 };
@@ -334,7 +343,7 @@ ChildThread.prototype.onredundant = function() {
  * @public
  */
 
-ChildThread.prototype.destroy = function() {
+ChildThreadPrototype.destroy = function() {
   this.unlisten();
   this.destroyTarget();
   this.off();
@@ -346,7 +355,7 @@ ChildThread.prototype.destroy = function() {
  * @private
  */
 
-ChildThread.prototype.destroyTarget = function() {
+ChildThreadPrototype.destroyTarget = function() {
   debug('destroy thread (%s)');
 
   switch(this.type) {

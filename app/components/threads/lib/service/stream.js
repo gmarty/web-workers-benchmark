@@ -32,8 +32,17 @@ var debug = 0 ? console.log.bind(console, '[ServiceStream]') : function() {};
  */
 
 function ServiceStream(options) {
-  this._ = new PrivateServiceStream(this, options);
+  this._ = new ServiceStreamPrivate(this, options);
 }
+
+/**
+ * Prototype assigned to variable
+ * to improve compression.
+ *
+ * @type {Object}
+ */
+
+var ServiceStreamPrototype = ServiceStream.prototype;
 
 /**
  * Services that allows clients to
@@ -45,7 +54,7 @@ function ServiceStream(options) {
  * @returns {(Promise|*)}
  */
 
-ServiceStream.prototype.cancel = function(reason) {
+ServiceStreamPrototype.cancel = function(reason) {
   var err = new TypeError('service should implement stream.cancel()');
   return Promise.reject(err);
 };
@@ -60,7 +69,7 @@ ServiceStream.prototype.cancel = function(reason) {
  * @returns {Promise}
  */
 
-ServiceStream.prototype.abort = function(data) {
+ServiceStreamPrototype.abort = function(data) {
   debug('abort', data);
   return this._.post('abort', 'aborted', data);
 };
@@ -72,7 +81,7 @@ ServiceStream.prototype.abort = function(data) {
  * @returns {Promise}
  */
 
-ServiceStream.prototype.write = function(data) {
+ServiceStreamPrototype.write = function(data) {
   debug('write', data);
   return this._.post('write', 'writable', data);
 };
@@ -87,7 +96,7 @@ ServiceStream.prototype.write = function(data) {
  * @returns {Promise}
  */
 
-ServiceStream.prototype.close = function() {
+ServiceStreamPrototype.close = function() {
   debug('close');
   return this._.post('close', 'closed');
 };
@@ -100,7 +109,7 @@ ServiceStream.prototype.close = function() {
  * @private
  */
 
-function PrivateServiceStream(target, options) {
+function ServiceStreamPrivate(target, options) {
   this.target = target;
   this.id = options.id;
   this.channel = options.channel;
@@ -109,6 +118,15 @@ function PrivateServiceStream(target, options) {
   this.messenger = new Messenger(options.serviceId, '[ServiceStream]');
   debug('initialized', target, options);
 }
+
+/**
+ * Prototype assigned to variable
+ * to improve compression.
+ *
+ * @type {Object}
+ */
+
+var ServiceStreamPrivatePrototype = ServiceStreamPrivate.prototype;
 
 /**
  * Validate the internal state to avoid
@@ -125,7 +143,7 @@ function PrivateServiceStream(target, options) {
  * @private
  */
 
-PrivateServiceStream.prototype.validateState = function(actionName, state) {
+ServiceStreamPrivatePrototype.validateState = function(actionName, state) {
   if (this.state !== 'writable') {
     var msg = 'Can\'t ' + actionName + ' on current state: ' + this.state;
     return Promise.reject(new TypeError(msg));
@@ -147,7 +165,7 @@ PrivateServiceStream.prototype.validateState = function(actionName, state) {
  * @private
  */
 
-PrivateServiceStream.prototype.cancel = function(reason) {
+ServiceStreamPrivatePrototype.cancel = function(reason) {
   return this.validateState('cancel', 'canceled').then(function() {
     return this.target.cancel(reason);
   }.bind(this));
@@ -163,7 +181,7 @@ PrivateServiceStream.prototype.cancel = function(reason) {
  * @private
  */
 
-PrivateServiceStream.prototype.post = function(type, state, data) {
+ServiceStreamPrivatePrototype.post = function(type, state, data) {
   debug('post', type, state, data);
   return this.validateState(type, state).then(function() {
     debug('validated', this.channel);
