@@ -36,6 +36,7 @@ export default class LatencyController extends Controller {
 
     this.client = threadClient;
     this.rawWorker = new Worker('workers/latency-worker.js');
+    this.sharedWorker = new SharedWorker('workers/latency-shared-worker.js');
     this.channel = BROADCAST_CHANNEL_SUPPORT ? new window.BroadcastChannel('latency') : {};
 
     // Start benchmarking.
@@ -59,6 +60,7 @@ export default class LatencyController extends Controller {
 
       this.startMeasuring();
     };
+    this.sharedWorker.port.start();
   }
 
   setActiveController(controllerName = 'home') {
@@ -75,6 +77,13 @@ export default class LatencyController extends Controller {
     var dataSets = [];
 
     this.measureLatencyOfWebWorkersWithPostMessage()
+      .then((dataSet) => {
+        if (dataSet) {
+          dataSets.push(dataSet);
+        }
+
+        return this.measureLatencyOfSharedWorkersWithPostMessage();
+      })
       .then((dataSet) => {
         if (dataSet) {
           dataSets.push(dataSet);
@@ -160,7 +169,38 @@ export default class LatencyController extends Controller {
           } else {
             resolve({
               name: 'Web Workers with postMessage',
-              shortName: 'postMessage',
+              shortName: 'Web postMessage',
+              values: dataSet
+            });
+          }
+        };
+      };
+
+      benchmark();
+    });
+  }
+
+  measureLatencyOfSharedWorkersWithPostMessage() {
+    return new Promise(resolve => {
+      var dataSet = [];
+      var benchmark = () => {
+        var highResolutionBefore = window.performance.now();
+
+        this.sharedWorker.port.postMessage(0);
+        this.sharedWorker.port.onmessage = () => {
+          var highResolutionAfter = window.performance.now();
+          var data = [
+            highResolutionAfter - highResolutionBefore
+          ];
+
+          dataSet.push(data);
+
+          if (dataSet.length <= ITERATIONS) {
+            benchmark(dataSet);
+          } else {
+            resolve({
+              name: 'Shared Workers with postMessage',
+              shortName: 'Shared postMessage',
               values: dataSet
             });
           }
