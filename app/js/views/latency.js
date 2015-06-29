@@ -72,24 +72,12 @@ export default class LatencyView extends View {
       var shortTitle = dataSet.shortName;
       var values = dataSet.values;
 
-      var uploadVal = values.map(value => value[0]);
-      var downloadVal = values.map(value => value[1]);
-      var roundtripVal = values.map(value => value[2]);
+      var roundtripVal = values.map(value => value[0]);
 
-      var uploadMean = mean(uploadVal);
-      var downloadMean = mean(downloadVal);
       var roundtripMean = mean(roundtripVal);
-      var uploadMedian = median(uploadVal);
-      var downloadMedian = median(downloadVal);
       var roundtripMedian = median(roundtripVal);
-      var uploadStdev = stdev(uploadVal);
-      var downloadStdev = stdev(downloadVal);
       var roundtripStdev = stdev(roundtripVal);
-      var upload90Percentile = percentile(uploadVal, 0.90);
-      var download90Percentile = percentile(downloadVal, 0.90);
       var roundtrip90Percentile = percentile(roundtripVal, 0.90);
-      var upload95Percentile = percentile(uploadVal, 0.95);
-      var download95Percentile = percentile(downloadVal, 0.95);
       var roundtrip95Percentile = percentile(roundtripVal, 0.95);
 
       var tpl = `
@@ -98,7 +86,6 @@ export default class LatencyView extends View {
         </header>
         <table>
           <tr>
-            <th></th>
             <th>Mean</th>
             <th>Median</th>
             <th>Std dev</th>
@@ -106,23 +93,6 @@ export default class LatencyView extends View {
             <th>95th %ile</th>
           </tr>
           <tr>
-            <th>U</th>
-            <td>${(uploadMean).toFixed(3)}</td>
-            <td>${(uploadMedian).toFixed(3)}</td>
-            <td>${(uploadStdev).toFixed(3)}</td>
-            <td>${(upload90Percentile).toFixed(3)}</td>
-            <td>${(upload95Percentile).toFixed(3)}</td>
-          </tr>
-          <tr>
-            <th>D</th>
-            <td>${(downloadMean).toFixed(3)}</td>
-            <td>${(downloadMedian).toFixed(3)}</td>
-            <td>${(downloadStdev).toFixed(3)}</td>
-            <td>${(download90Percentile).toFixed(3)}</td>
-            <td>${(download95Percentile).toFixed(3)}</td>
-          </tr>
-          <tr>
-            <th>RT</th>
             <td>${(roundtripMean).toFixed(3)}</td>
             <td>${(roundtripMedian).toFixed(3)}</td>
             <td>${(roundtripStdev).toFixed(3)}</td>
@@ -130,7 +100,7 @@ export default class LatencyView extends View {
             <td>${(roundtrip95Percentile).toFixed(3)}</td>
           </tr>
         </table>
-        <p class="fine-prints">Unit is latency in ms.</p>
+        <p class="fine-prints">Values are latency round trip in ms.</p>
       `;
 
       var container = document.createElement('div');
@@ -151,7 +121,7 @@ export default class LatencyView extends View {
         data: values.map((value, index) => {
           return {
             name: shortTitle,
-            value: value[2],
+            value: value[0],
             id: index
           };
         }),

@@ -68,19 +68,14 @@ export default class CreationController extends Controller {
     return new Promise(resolve => {
       var dataSet = [];
       var benchmark = () => {
-        var now = Date.now();
         var highResolutionBefore = window.performance.now();
 
         var worker = new Worker('workers/creation-worker.js');
 
-        worker.postMessage(now);
-        worker.onmessage = evt => {
-          var timestamps = evt.data;
-          var now = Date.now();
+        worker.postMessage(0);
+        worker.onmessage = () => {
           var highResolutionAfter = window.performance.now();
           var data = [
-            timestamps[0],
-            now - timestamps[1],
             highResolutionAfter - highResolutionBefore
           ];
 
@@ -107,20 +102,15 @@ export default class CreationController extends Controller {
     return new Promise(resolve => {
       var dataSet = [];
       var benchmark = () => {
-        var now = Date.now();
         var highResolutionBefore = window.performance.now();
 
         var iframe = document.createElement('iframe');
         iframe.src = 'workers/creation-window/index.html';
         document.body.appendChild(iframe);
 
-        var receiveMessage = evt => {
-          var timestamps = evt.data;
-          var now = Date.now();
+        var receiveMessage = () => {
           var highResolutionAfter = window.performance.now();
           var data = [
-            timestamps[0],
-            now - timestamps[1],
             highResolutionAfter - highResolutionBefore
           ];
 
@@ -142,7 +132,7 @@ export default class CreationController extends Controller {
         window.addEventListener('message', receiveMessage);
 
         iframe.contentWindow.addEventListener('load', function() {
-          iframe.contentWindow.postMessage(now, '*');
+          iframe.contentWindow.postMessage(0, '*');
         });
       };
 

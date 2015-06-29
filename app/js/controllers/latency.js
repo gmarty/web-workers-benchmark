@@ -112,17 +112,13 @@ export default class LatencyController extends Controller {
 
       var dataSet = [];
       var benchmark = () => {
-        var now = Date.now();
         var highResolutionBefore = window.performance.now();
 
         this.client
-          .method('ping', now)
-          .then(timestamps => {
-            var now = Date.now();
+          .method('ping', 0)
+          .then(() => {
             var highResolutionAfter = window.performance.now();
             var data = [
-              timestamps[0],
-              now - timestamps[1],
               highResolutionAfter - highResolutionBefore
             ];
 
@@ -148,17 +144,12 @@ export default class LatencyController extends Controller {
     return new Promise(resolve => {
       var dataSet = [];
       var benchmark = () => {
-        var now = Date.now();
         var highResolutionBefore = window.performance.now();
 
-        this.rawWorker.postMessage(now);
-        this.rawWorker.onmessage = evt => {
-          var timestamps = evt.data;
-          var now = Date.now();
+        this.rawWorker.postMessage(0);
+        this.rawWorker.onmessage = () => {
           var highResolutionAfter = window.performance.now();
           var data = [
-            timestamps[0],
-            now - timestamps[1],
             highResolutionAfter - highResolutionBefore
           ];
 
@@ -190,17 +181,12 @@ export default class LatencyController extends Controller {
 
       var dataSet = [];
       var benchmark = () => {
-        var now = Date.now();
         var highResolutionBefore = window.performance.now();
 
-        this.channel.postMessage(now);
-        this.channel.onmessage = evt => {
-          var timestamps = evt.data;
-          var now = Date.now();
+        this.channel.postMessage(0);
+        this.channel.onmessage = () => {
           var highResolutionAfter = window.performance.now();
           var data = [
-            timestamps[0],
-            now - timestamps[1],
             highResolutionAfter - highResolutionBefore
           ];
 

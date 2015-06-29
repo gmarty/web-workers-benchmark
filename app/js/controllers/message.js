@@ -115,23 +115,13 @@ export default class MessageController extends Controller {
       var dataSet = [];
       var benchmark = () => {
         var object = this.getObject(size);
-        var now = Date.now();
         var highResolutionBefore = window.performance.now();
 
         this.client
-          .method('ping', {
-            m: object,
-            t: now,
-            s: size
-          })
-          .then(obj => {
-            var timestamps = obj.t;
-            var size = obj.s;
-            var now = Date.now();
+          .method('ping', object)
+          .then(() => {
             var highResolutionAfter = window.performance.now();
             var data = [
-              timestamps[0],
-              now - timestamps[1],
               highResolutionAfter - highResolutionBefore,
               size
             ];
@@ -163,22 +153,12 @@ export default class MessageController extends Controller {
       var dataSet = [];
       var benchmark = () => {
         var object = this.getObject(size);
-        var now = Date.now();
         var highResolutionBefore = window.performance.now();
 
-        this.rawWorker.postMessage({
-          m: object,
-          t: now,
-          s: size
-        });
-        this.rawWorker.onmessage = evt => {
-          var timestamps = evt.data.t;
-          var size = evt.data.s;
-          var now = Date.now();
+        this.rawWorker.postMessage(object);
+        this.rawWorker.onmessage = () => {
           var highResolutionAfter = window.performance.now();
           var data = [
-            timestamps[0],
-            now - timestamps[1],
             highResolutionAfter - highResolutionBefore,
             size
           ];
@@ -216,22 +196,12 @@ export default class MessageController extends Controller {
       var dataSet = [];
       var benchmark = () => {
         var object = this.getObject(size);
-        var now = Date.now();
         var highResolutionBefore = window.performance.now();
 
-        this.channel.postMessage({
-          m: object,
-          t: now,
-          s: size
-        });
-        this.channel.onmessage = evt => {
-          var timestamps = evt.data.t;
-          var size = evt.data.s;
-          var now = Date.now();
+        this.channel.postMessage(object);
+        this.channel.onmessage = () => {
           var highResolutionAfter = window.performance.now();
           var data = [
-            timestamps[0],
-            now - timestamps[1],
             highResolutionAfter - highResolutionBefore,
             size
           ];
