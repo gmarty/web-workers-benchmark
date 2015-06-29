@@ -202,6 +202,9 @@ export default class LatencyView extends View {
       // Caption for each measured set.
       this.graph.g.xAxisEl
         .append('text')
+        .attr('textLength', this.graph.g.width / dataSets.length)
+        .attr('lengthAdjust', 'spacingAndGlyphs')
+        .attr('fill', index % 2 ? 'grey' : 'black')
         .attr('transform', `translate(${(index * this.graph.g.width / dataSets.length)},12)`)
         .attr('y', 6)
         .attr('dy', '.71em')

@@ -169,7 +169,7 @@ export default class LatencyController extends Controller {
           } else {
             resolve({
               name: 'Web Workers with postMessage',
-              shortName: 'Web postMessage',
+              shortName: 'Web message',
               values: dataSet
             });
           }
@@ -200,7 +200,7 @@ export default class LatencyController extends Controller {
           } else {
             resolve({
               name: 'Shared Workers with postMessage',
-              shortName: 'Shared postMessage',
+              shortName: 'Shared message',
               values: dataSet
             });
           }
