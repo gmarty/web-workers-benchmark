@@ -34,7 +34,9 @@ Results measured on a Flame.
 
 ### Transfer speed
 
-![Speed transfer](https://rawgit.com/gmarty/web-workers-benchmark/master/app/img/transfer-speed-scatter-plot.svg)
+![Speed transfer](https://rawgit.com/gmarty/web-workers-benchmark/master/app/img/transfer-speed-barchart.svg)
+
+![Speed transfer scatterplot](https://rawgit.com/gmarty/web-workers-benchmark/master/app/img/transfer-speed-scatter-plot.svg)
 
 ## Compatibility
 
