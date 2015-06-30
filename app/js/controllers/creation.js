@@ -6,6 +6,7 @@ import { Controller } from 'components/fxos-mvc/dist/mvc';
 import CreationView from 'js/views/creation';
 
 const ITERATIONS = 100;
+const BROADCAST_CHANNEL_SUPPORT = 'BroadcastChannel' in window;
 
 export default class CreationController extends Controller {
   constructor(options) {
@@ -18,11 +19,15 @@ export default class CreationController extends Controller {
   main() {
     this.view.setActive(true);
 
+    this.bcWorker = new Worker('workers/creation-worker.js');
+
     // Start benchmarking.
     this.init();
   }
 
   teardown() {
+    this.bcWorker.terminate();
+
     this.view.setActive(false);
   }
 
@@ -44,6 +49,13 @@ export default class CreationController extends Controller {
     var dataSets = [];
 
     this.benchmarkCreationOfWebWorkers()
+      .then((dataSet) => {
+        if (dataSet) {
+          dataSets.push(dataSet);
+        }
+
+        return this.benchmarkCreationOfBroadcastChannels();
+      })
       .then((dataSet) => {
         if (dataSet) {
           dataSets.push(dataSet);
@@ -88,6 +100,46 @@ export default class CreationController extends Controller {
             resolve({
               name: 'Web Workers',
               shortName: 'worker',
+              values: dataSet
+            });
+          }
+        };
+      };
+
+      benchmark();
+    });
+  }
+
+  benchmarkCreationOfBroadcastChannels() {
+    return new Promise(resolve => {
+      if (!BROADCAST_CHANNEL_SUPPORT) {
+        console.error('The BroadcastChannel API is not supported.');
+        resolve(null);
+        return;
+      }
+
+      var dataSet = [];
+      var benchmark = () => {
+        var highResolutionBefore = window.performance.now();
+
+        var channel = new window.BroadcastChannel('creation');
+
+        channel.postMessage(0);
+        channel.onmessage = () => {
+          var highResolutionAfter = window.performance.now();
+          var data = [
+            highResolutionAfter - highResolutionBefore
+          ];
+
+          dataSet.push(data);
+          channel.close();
+
+          if (dataSet.length <= ITERATIONS) {
+            benchmark(dataSet);
+          } else {
+            resolve({
+              name: 'Broadcast Channels',
+              shortName: 'BC channel',
               values: dataSet
             });
           }
