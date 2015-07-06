@@ -103,7 +103,7 @@ export default class MessageController extends Controller {
   }
 
   benchmarkThreads() {
-    var size = 0;
+    var size = 1;
 
     return new Promise(resolve => {
       if (!BROADCAST_CHANNEL_SUPPORT) {
@@ -147,7 +147,7 @@ export default class MessageController extends Controller {
   }
 
   benchmarkWebWorkersWithPostMessage() {
-    var size = 0;
+    var size = 1;
 
     return new Promise(resolve => {
       var dataSet = [];
@@ -184,7 +184,7 @@ export default class MessageController extends Controller {
   }
 
   benchmarkWebWorkersWithBroadcastChannel() {
-    var size = 0;
+    var size = 1;
 
     return new Promise(resolve => {
       if (!BROADCAST_CHANNEL_SUPPORT) {
