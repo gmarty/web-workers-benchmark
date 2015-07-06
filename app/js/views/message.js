@@ -86,10 +86,9 @@ export default class MessageView extends View {
       var roundtripStdev = stdev(roundtripVal);
       var roundtrip90Percentile = percentile(roundtripVal, 0.90);
       var roundtrip95Percentile = percentile(roundtripVal, 0.95);
-      // 1024 is to get bytes.
-      // Value is round trip, so we need to divide it by 2.
+      // Value is round trip, so we need to multiple it by 2.
       // Then multiply by the duration of a frame in ms (1000 / 60).
-      var maxMessageSize = mean(roundtripCorrectedVal) * 1024 / 2 * 1000 / 60;
+      var maxMessageSize = mean(roundtripCorrectedVal) * 2 * 1000 / 60;
 
       var tpl = `
         <header>
