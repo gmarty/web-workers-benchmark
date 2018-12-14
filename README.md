@@ -22,21 +22,21 @@ Results measured on a Flame.
 
 ### Creation time
 
-![Creation time](https://rawgit.com/gmarty/web-workers-benchmark/master/app/img/creation-barchart.svg)
+![Creation time](https://combinatronics.com/gmarty/web-workers-benchmark/master/app/img/creation-barchart.svg)
 
-![Creation time scatterplot](https://rawgit.com/gmarty/web-workers-benchmark/master/app/img/creation-scatter-plot.svg)
+![Creation time scatterplot](https://combinatronics.com/gmarty/web-workers-benchmark/master/app/img/creation-scatter-plot.svg)
 
 ### Latency
 
-![Latency](https://rawgit.com/gmarty/web-workers-benchmark/master/app/img/latency-barchart.svg)
+![Latency](https://combinatronics.com/gmarty/web-workers-benchmark/master/app/img/latency-barchart.svg)
 
-![Latency scatterplot](https://rawgit.com/gmarty/web-workers-benchmark/master/app/img/latency-scatter-plot.svg)
+![Latency scatterplot](https://combinatronics.com/gmarty/web-workers-benchmark/master/app/img/latency-scatter-plot.svg)
 
 ### Transfer speed
 
-![Speed transfer](https://rawgit.com/gmarty/web-workers-benchmark/master/app/img/transfer-speed-barchart.svg)
+![Speed transfer](https://combinatronics.com/gmarty/web-workers-benchmark/master/app/img/transfer-speed-barchart.svg)
 
-![Speed transfer scatterplot](https://rawgit.com/gmarty/web-workers-benchmark/master/app/img/transfer-speed-scatter-plot.svg)
+![Speed transfer scatterplot](https://combinatronics.com/gmarty/web-workers-benchmark/master/app/img/transfer-speed-scatter-plot.svg)
 
 ## Compatibility
 
